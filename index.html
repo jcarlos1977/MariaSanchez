@@ -16,14 +16,15 @@
     <label>Producto:</label>
     <input type="text" id="producto" readonly placeholder="Selecciona producto" />
     <button onclick="abrirModal('producto')">Seleccionar</button>
-    <button class="small" onclick="abrirModalEditar('producto')">⚙️ Editar productos</button>
+    <!-- oculto en el UI principal pero disponible dentro de modales -->
+    <button class="small" id="btnEditarProductos" style="display:none;" onclick="abrirModalEditar('producto')">⚙️ Editar productos</button>
   </div>
 
   <div class="row">
     <label>Talla:</label>
     <input type="text" id="talla" readonly placeholder="Selecciona talla" />
     <button onclick="abrirModal('talla')">Seleccionar</button>
-    <button class="small" onclick="abrirModalEditar('talla')">⚙️ Editar tallas</button>
+    <button class="small" id="btnEditarTallas" style="display:none;" onclick="abrirModalEditar('talla')">⚙️ Editar tallas</button>
   </div>
 
   <div class="row">
@@ -49,15 +50,21 @@
     <button onclick="venderProducto()">💸 Vender</button>
     <button onclick="toggleInventario()">📊 Ver Inventario</button>
     <button onclick="toggleMovimientos()">📜 Ver Movimientos</button>
-    <button onclick="activarVoz()">🎙️ Voz</button>
+    <button onclick="actualizarDatos()">🔄 Actualizar datos</button>
+    <!--<button onclick="activarVoz()">🎙️ Voz</button>-->
+  </div>
+  
+  <div class="row">
+    <button id="btnToggleResumen" onclick="toggleResumen()">📊 Mostrar/Ocultar Resumen</button>
   </div>
 
-  <div class="summary" id="resumen">
+  <div class="summary" id="resumen" style="display:none;">
     <h3 id="totalInvertido">Total invertido: $0</h3>
     <h3 id="totalVendido">Total vendido: $0</h3>
     <h3 id="utilidad">Utilidad: $0</h3>
   </div>
 
+  
   <!-- Secciones ocultas por defecto -->
   <section id="inventarioSection" class="hidden-section">
     <h3>📦 Inventario Actual</h3>
