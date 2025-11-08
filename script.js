@@ -48,8 +48,17 @@ function abrirModal(tipo, opts = {}) {
   contenido.innerHTML = '';
   modal.style.display = 'flex';
 
+  // botón cerrar en todas las modales
+  const btnCerrarTop = document.createElement('div');
+  btnCerrarTop.style.textAlign = 'right';
+  const btnCerrar = document.createElement('button');
+  btnCerrar.innerText = '❌ Cerrar';
+  btnCerrar.onclick = cerrarModal;
+  btnCerrarTop.appendChild(btnCerrar);
+  contenido.appendChild(btnCerrarTop);
+
   if (tipo === 'producto') {
-    contenido.innerHTML = '<h3>Selecciona un producto</h3>';
+    const h = document.createElement('h3'); h.innerText = 'Selecciona un producto'; contenido.appendChild(h);
     listaProductos.forEach(p => {
       const div = document.createElement('div');
       div.className = 'card';
@@ -68,18 +77,16 @@ function abrirModal(tipo, opts = {}) {
     contenido.appendChild(btnEdit);
   }
   else if (tipo === 'talla') {
-    contenido.innerHTML = '<h3>Selecciona una talla</h3>';
+    const h = document.createElement('h3'); h.innerText = 'Selecciona una talla'; contenido.appendChild(h);
     listaTallas.forEach(t => {
       const div = document.createElement('div');
       div.className = 'card';
       div.innerText = t;
       div.onclick = async () => {
         document.getElementById('talla').value = t;
-        // al seleccionar talla -> autocompletar precios con 2 decimales o 0.00
-        await autocompletarPreciosPorProductoTalla();
+        await autocompletarPreciosPorProductoTalla(); // autollenar precios con 2 decimales
         cerrarModal();
-        // abrir teclado de cantidad para seguir flujo
-        abrirModalNumero('cantidad', {allowDecimal:false});
+        abrirModalNumero('cantidad', {allowDecimal:false}); // seguir flujo
       };
       contenido.appendChild(div);
     });
@@ -89,7 +96,6 @@ function abrirModal(tipo, opts = {}) {
     btnEdit2.onclick = () => { cerrarModal(); abrirModalEditar('talla'); };
     contenido.appendChild(btnEdit2);
   } else {
-    console.warn('abrirModal: tipo no manejado:', tipo);
     contenido.innerHTML = '<p>Tipo no soportado</p>';
   }
 }
@@ -100,7 +106,6 @@ function cerrarModal() {
 }
 window.onclick = (ev) => {
   const modal = document.getElementById('modal');
-  const contenido = document.getElementById('contenidoModal');
   if (ev.target === modal) cerrarModal();
 };
 
@@ -110,9 +115,9 @@ function abrirModalNumero(campoId, opts = {allowDecimal:false}) {
   const contenido = document.getElementById('contenidoModal');
   modal.style.display = 'flex';
 
-  // copiar valor actual al temporal
   const current = document.getElementById(campoId).value || '';
   contenido.innerHTML = `
+    <div style="text-align:right;"><button id="btnCloseNum">❌ Cerrar</button></div>
     <h3>Ingresa valor</h3>
     <input id="valorTemp" type="text" readonly style="font-size:18px;padding:8px;width:90%;margin:8px 0;border-radius:6px;border:1px solid #ddd;" value="${current}" />
     <div class="keypad" id="keypadArea"></div>
@@ -122,6 +127,8 @@ function abrirModalNumero(campoId, opts = {allowDecimal:false}) {
       <button id="btnCancel">✖️ Cancelar</button>
     </div>
   `;
+
+  document.getElementById('btnCloseNum').onclick = cerrarModal;
 
   const keypad = document.getElementById('keypadArea');
   for (let i=1;i<=9;i++){
@@ -143,7 +150,6 @@ function abrirModalNumero(campoId, opts = {allowDecimal:false}) {
   document.getElementById('btnConfirm').onclick = ()=> {
     const v = document.getElementById('valorTemp').value;
     if (v !== '') {
-      // if price field, format to 2 decimals
       if (campoId === 'precioCompra' || campoId === 'precioVenta') {
         const num = parseFloat(v) || 0;
         document.getElementById(campoId).value = num.toFixed(2);
@@ -183,7 +189,7 @@ function abrirModalEditar(tipo) {
     const span = document.createElement('span'); span.innerText = item;
     const actions = document.createElement('div');
     const btnDel = document.createElement('button'); btnDel.innerText = '❌'; btnDel.className='small';
-    btnDel.onclick = ()=>{
+    btnDel.onclick = ()=> {
       if (confirm('Eliminar "'+item+'"?')) {
         lista.splice(idx,1); guardarListas(); abrirModalEditar(tipo);
       }
@@ -198,7 +204,7 @@ function abrirModalEditar(tipo) {
   inputNuevo.style.width = '70%'; inputNuevo.style.padding='8px';
   contenido.appendChild(inputNuevo);
   const btnAdd = document.createElement('button'); btnAdd.innerText = 'Agregar'; btnAdd.style.marginLeft='8px';
-  btnAdd.onclick = ()=>{
+  btnAdd.onclick = ()=> {
     const val = inputNuevo.value.trim();
     if (!val) return alert('Ingresa un valor');
     if (lista.includes(val)) return alert('Ya existe');
@@ -272,9 +278,9 @@ async function agregarProducto() {
   });
 
   alert(`✅ Se agregaron ${cantidad} ${producto}(s) talla ${talla}`);
-  // si inventario visible, recargar
-  const invSec = document.getElementById('inventarioSection');
-  if (invSec.style.display === 'block') mostrarInventario();
+  // recargar si las secciones están visibles
+  if (document.getElementById('inventarioSection').style.display === 'block') mostrarInventario();
+  if (document.getElementById('movimientosSection').style.display === 'block') mostrarMovimientos();
 }
 
 async function venderProducto() {
@@ -298,8 +304,7 @@ async function venderProducto() {
     });
 
     alert(`💰 Venta registrada: ${cantidad} ${producto}(s) talla ${talla}`);
-    const movSec = document.getElementById('movimientosSection');
-    if (movSec.style.display === 'block') mostrarMovimientos();
+    if (document.getElementById('movimientosSection').style.display === 'block') mostrarMovimientos();
     if (document.getElementById('inventarioSection').style.display === 'block') mostrarInventario();
   } else {
     alert('❌ No hay suficiente inventario para vender.');
@@ -375,7 +380,18 @@ async function calcularResumen() {
   document.getElementById('utilidad').innerText = `Utilidad: $${(totalVendido - totalInvertido).toFixed(2)}`;
 }
 
+// ----- Botón "Actualizar datos" -----
+function actualizarDatos() {
+  // recarga tablas visibles y el resumen sin recargar la página
+  if (document.getElementById('inventarioSection').style.display === 'block') mostrarInventario();
+  if (document.getElementById('movimientosSection').style.display === 'block') mostrarMovimientos();
+  calcularResumen();
+  // pequeña confirmación, no obligatorio
+  // alert('Datos actualizados');
+}
+
 // ----- Voz (simple) -----
+/*
 function activarVoz() {
   if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
     return alert('Reconocimiento de voz no disponible en este navegador.');
@@ -397,11 +413,21 @@ function activarVoz() {
   };
   r.onerror = (err) => console.error('voice err', err);
 }
+*/
+function toggleResumen() {
+  const resumen = document.getElementById('resumen');
+  if (resumen.style.display === 'none' || resumen.style.display === '') {
+    resumen.style.display = 'block';
+  } else {
+    resumen.style.display = 'none';
+  }
+}
+
 
 // ----- Inicialización -----
 window.addEventListener('load', () => {
   guardarListas();
-  // ocultar secciones por defecto (ya controlado por CSS, pero por seguridad)
+  // ocultar secciones por defecto
   document.getElementById('inventarioSection').style.display = 'none';
   document.getElementById('movimientosSection').style.display = 'none';
   // precargar resumen
@@ -415,3 +441,4 @@ window.abrirModalEditar = abrirModalEditar;
 window.cerrarModal = cerrarModal;
 window.toggleInventario = toggleInventario;
 window.toggleMovimientos = toggleMovimientos;
+window.actualizarDatos = actualizarDatos;
