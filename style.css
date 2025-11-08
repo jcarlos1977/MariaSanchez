@@ -25,3 +25,7 @@ hr { margin:12px 0; border: none; border-top: 1px solid #eee; }
 
 /* sections hidden initially */
 .hidden-section { display:none; margin-top:14px; }
+
+.row input + button {
+  width: 120px; /* mismo ancho para todos los botones al lado de un input */
+}
