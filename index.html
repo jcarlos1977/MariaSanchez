@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Control de Ventas e Inventario</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <h2>📦 Control de Ventas e Inventario</h2>
+
+  <div class="row">
+    <label>Producto:</label>
+    <input type="text" id="producto" readonly placeholder="Selecciona producto" />
+    <button onclick="abrirModal('producto')">Seleccionar</button>
+    <button class="small" onclick="abrirModalEditar('producto')">⚙️ Editar productos</button>
+  </div>
+
+  <div class="row">
+    <label>Talla:</label>
+    <input type="text" id="talla" readonly placeholder="Selecciona talla" />
+    <button onclick="abrirModal('talla')">Seleccionar</button>
+    <button class="small" onclick="abrirModalEditar('talla')">⚙️ Editar tallas</button>
+  </div>
+
+  <div class="row">
+    <label>Cantidad:</label>
+    <input type="text" id="cantidad" readonly placeholder="0" />
+    <button onclick="abrirModalNumero('cantidad', {allowDecimal:false})">Teclado</button>
+  </div>
+
+  <div class="row">
+    <label>Precio Compra:</label>
+    <input type="text" id="precioCompra" readonly placeholder="0.00" />
+    <button onclick="abrirModalNumero('precioCompra', {allowDecimal:true})">Teclado</button>
+  </div>
+
+  <div class="row">
+    <label>Precio Venta:</label>
+    <input type="text" id="precioVenta" readonly placeholder="0.00" />
+    <button onclick="abrirModalNumero('precioVenta', {allowDecimal:true})">Teclado</button>
+  </div>
+
+  <div class="row">
+    <button onclick="agregarProducto()">➕ Agregar (compra)</button>
+    <button onclick="venderProducto()">💸 Vender</button>
+    <button onclick="toggleInventario()">📊 Ver Inventario</button>
+    <button onclick="toggleMovimientos()">📜 Ver Movimientos</button>
+    <button onclick="activarVoz()">🎙️ Voz</button>
+  </div>
+
+  <div class="summary" id="resumen">
+    <h3 id="totalInvertido">Total invertido: $0</h3>
+    <h3 id="totalVendido">Total vendido: $0</h3>
+    <h3 id="utilidad">Utilidad: $0</h3>
+  </div>
+
+  <!-- Secciones ocultas por defecto -->
+  <section id="inventarioSection" class="hidden-section">
+    <h3>📦 Inventario Actual</h3>
+    <table id="tablaInventario">
+      <thead>
+        <tr><th>Producto</th><th>Talla</th><th>Cantidad</th><th>Compra</th><th>Venta</th><th>Invertido</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="movimientosSection" class="hidden-section">
+    <h3>📜 Historial de Movimientos</h3>
+    <table id="tablaMovimientos">
+      <thead>
+        <tr><th>Tipo</th><th>Producto</th><th>Talla</th><th>Cantidad</th><th>Total</th><th>Fecha</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- Modal genérico -->
+  <div id="modal" class="modal" style="display:none; align-items:center;">
+    <div id="contenidoModal" class="modal-content"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
