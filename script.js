@@ -390,30 +390,6 @@ function actualizarDatos() {
   // alert('Datos actualizados');
 }
 
-// ----- Voz (simple) -----
-/*
-function activarVoz() {
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    return alert('Reconocimiento de voz no disponible en este navegador.');
-  }
-  const Recon = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const r = new Recon();
-  r.lang = 'es-ES'; r.interimResults = false; r.maxAlternatives = 1;
-  r.start();
-  r.onresult = (e) => {
-    const texto = e.results[0][0].transcript.toLowerCase();
-    alert('🎧 Comando detectado: ' + texto);
-    if (texto.includes('vender') && texto.includes('sandalia')) {
-      document.getElementById('producto').value = 'Sandalia';
-      const m = texto.match(/talla\s*([0-9]+|ch|m|g)/i);
-      if (m) document.getElementById('talla').value = m[1];
-      document.getElementById('cantidad').value = '1';
-      venderProducto();
-    }
-  };
-  r.onerror = (err) => console.error('voice err', err);
-}
-*/
 function toggleResumen() {
   const resumen = document.getElementById('resumen');
   if (resumen.style.display === 'none' || resumen.style.display === '') {
@@ -422,6 +398,280 @@ function toggleResumen() {
     resumen.style.display = 'none';
   }
 }
+
+// ----- Hacer clic en fila de inventario para editar -----
+async function editarFilaInventario(docId) {
+  const ref = db.collection('productos').doc(docId);
+  const doc = await ref.get();
+  if (!doc.exists) return alert('Producto no encontrado.');
+
+  const data = doc.data();
+
+  const modal = document.getElementById('modal');
+  const contenido = document.getElementById('contenidoModal');
+  contenido.innerHTML = '';
+  modal.style.display = 'flex';
+
+  contenido.innerHTML = `
+    <div style="text-align:right;"><button id="btnCloseEdit">❌ Cerrar</button></div>
+    <h3>Editar producto</h3>
+    <label>Producto:</label>
+    <input type="text" id="editProducto" value="${data.producto}" readonly />
+    <br/>
+    <label>Talla:</label>
+    <input type="text" id="editTalla" value="${data.talla}" readonly />
+    <br/>
+    <label>Cantidad:</label>
+    <input type="number" id="editCantidad" value="${data.cantidad}" />
+    <br/>
+    <label>Precio Compra:</label>
+    <input type="number" step="0.01" id="editPrecioCompra" value="${data.precioCompra}" />
+    <br/>
+    <label>Precio Venta:</label>
+    <input type="number" step="0.01" id="editPrecioVenta" value="${data.precioVenta}" />
+    <br/><br/>
+    <button id="btnSaveEdit">💾 Guardar cambios</button>
+  `;
+
+  document.getElementById('btnCloseEdit').onclick = cerrarModal;
+
+  document.getElementById('btnSaveEdit').onclick = async () => {
+    const cantidad = parseInt(document.getElementById('editCantidad').value) || 0;
+    const precioCompra = parseFloat(document.getElementById('editPrecioCompra').value) || 0;
+    const precioVenta = parseFloat(document.getElementById('editPrecioVenta').value) || 0;
+
+    await ref.update({ cantidad, precioCompra, precioVenta });
+    alert('✅ Cambios guardados.');
+    cerrarModal();
+    mostrarInventario(); // recargar tabla
+    calcularResumen();
+  };
+}
+
+// ----- Modificar mostrarInventario para agregar clic -----
+async function mostrarInventario() {
+  const tabla = document.querySelector('#tablaInventario tbody');
+  tabla.innerHTML = '';
+  let totalInvertido = 0;
+  try {
+    const snapshot = await db.collection('productos').get();
+    snapshot.forEach(doc => {
+      const p = doc.data();
+      const row = tabla.insertRow();
+      row.innerHTML = `
+        <td>${p.producto}</td>
+        <td>${p.talla}</td>
+        <td>${p.cantidad}</td>
+        <td>$${(p.precioCompra||0).toFixed(2)}</td>
+        <td>$${(p.precioVenta||0).toFixed(2)}</td>
+        <td>$${((p.precioCompra||0) * (p.cantidad||0)).toFixed(2)}</td>
+      `;
+      totalInvertido += (p.precioCompra||0) * (p.cantidad||0);
+
+      // al hacer clic simple: resaltar fila
+      row.onclick = () => {
+        // quitar color de todas las filas
+        tabla.querySelectorAll('tr').forEach(r => r.style.backgroundColor = '');
+        // aplicar color gris claro a esta fila
+        row.style.backgroundColor = '#e0e0e0';
+      };
+
+      // al hacer doble clic: abrir modal para editar
+      row.ondblclick = () => editarFilaInventario(doc.id);
+    });
+    document.getElementById('totalInvertido').innerText = `Total invertido: $${totalInvertido.toFixed(2)}`;
+    calcularResumen();
+  } catch (e) {
+    console.error('mostrarInventario err', e);
+  }
+}
+
+function abrirModalReporte() {
+  const modal = document.getElementById('modal');
+  const contenido = document.getElementById('contenidoModal');
+  modal.style.display = 'flex';
+  contenido.innerHTML = '';
+
+  // botón cerrar
+  const btnCerrarTop = document.createElement('div');
+  btnCerrarTop.style.textAlign = 'right';
+  const btnCerrar = document.createElement('button');
+  btnCerrar.innerText = '❌ Cerrar';
+  btnCerrar.onclick = cerrarModal;
+  btnCerrarTop.appendChild(btnCerrar);
+  contenido.appendChild(btnCerrarTop);
+
+  // título
+  const h = document.createElement('h3');
+  h.innerText = 'Selecciona los productos para el reporte';
+  contenido.appendChild(h);
+
+  // generar checkboxes por productos
+  listaProductos.forEach(p => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '6px';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.value = p;
+    chk.id = `chk_${p}`;
+    const label = document.createElement('label');
+    label.htmlFor = `chk_${p}`;
+    label.innerText = p;
+    div.appendChild(chk);
+    div.appendChild(label);
+    contenido.appendChild(div);
+  });
+
+  // botón generar reporte
+  const btnGenerar = document.createElement('button');
+  btnGenerar.innerText = '📊 Generar reporte';
+  btnGenerar.style.marginTop = '10px';
+  btnGenerar.onclick = async () => {
+    const seleccionados = [];
+    listaProductos.forEach(p => {
+      const chk = document.getElementById(`chk_${p}`);
+      if (chk.checked) seleccionados.push(p);
+    });
+    if (seleccionados.length === 0) return alert('Selecciona al menos un producto');
+    await generarReporteProductos(seleccionados);
+  };
+  contenido.appendChild(btnGenerar);
+}
+
+async function generarReporteProductos(productosSeleccionados) {
+  const contenido = document.getElementById('contenidoModal');
+  contenido.innerHTML = ''; // limpiar modal
+
+  const h = document.createElement('h3');
+  h.innerText = 'Reporte de Inventario por Producto';
+  contenido.appendChild(h);
+
+  let totalGeneralCantidad = 0;
+  let totalGeneralInvertido = 0;
+  let totalGeneralValorVenta = 0;
+
+  try {
+    const snapshot = await db.collection('productos').get();
+
+    for (let producto of productosSeleccionados) {
+      // filtro por producto
+      const items = snapshot.docs
+        .map(doc => doc.data())
+        .filter(p => p.producto === producto);
+
+      if (items.length === 0) continue;
+
+      // Título del grupo
+      const hGrupo = document.createElement('h4');
+      hGrupo.innerText = `Producto: ${producto}`;
+      hGrupo.style.marginTop = '12px';
+      contenido.appendChild(hGrupo);
+
+      // Tabla del grupo
+      const tabla = document.createElement('table');
+      tabla.style.width = '100%';
+      tabla.style.borderCollapse = 'collapse';
+      tabla.innerHTML = `
+        <thead>
+          <tr style="background:#007bff; color:white;">
+            <th>Talla</th>
+            <th>Cantidad</th>
+            <th>Invertido</th>
+            <th>Valor Venta</th>
+            <th>Utilidad Potencial</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = tabla.querySelector('tbody');
+
+      let totalCantidad = 0;
+      let totalInvertido = 0;
+      let totalValorVenta = 0;
+
+      items.forEach(p => {
+        const invertido = (p.precioCompra||0)*(p.cantidad||0);
+        const valorVenta = (p.precioVenta||0)*(p.cantidad||0);
+        const row = tbody.insertRow();
+        row.innerHTML = `
+          <td>${p.talla}</td>
+          <td>${p.cantidad}</td>
+          <td>$${invertido.toFixed(2)}</td>
+          <td>$${valorVenta.toFixed(2)}</td>
+          <td>$${(valorVenta - invertido).toFixed(2)}</td>
+        `;
+        totalCantidad += p.cantidad || 0;
+        totalInvertido += invertido;
+        totalValorVenta += valorVenta;
+      });
+
+      // fila total por producto
+      const rowTotal = tbody.insertRow();
+      rowTotal.style.fontWeight = 'bold';
+      rowTotal.style.background = '#e0e0e0';
+      rowTotal.innerHTML = `
+        <td>Total</td>
+        <td>${totalCantidad}</td>
+        <td>$${totalInvertido.toFixed(2)}</td>
+        <td>$${totalValorVenta.toFixed(2)}</td>
+        <td>$${(totalValorVenta - totalInvertido).toFixed(2)}</td>
+      `;
+
+      contenido.appendChild(tabla);
+
+      // línea divisoria entre productos
+      const hr = document.createElement('hr');
+      hr.style.margin = '12px 0';
+      contenido.appendChild(hr);
+
+      // sumar al total general
+      totalGeneralCantidad += totalCantidad;
+      totalGeneralInvertido += totalInvertido;
+      totalGeneralValorVenta += totalValorVenta;
+    }
+
+    // fila total general
+    const hTotalGeneral = document.createElement('h4');
+    hTotalGeneral.innerText = 'TOTAL GENERAL';
+    hTotalGeneral.style.marginTop = '12px';
+    contenido.appendChild(hTotalGeneral);
+
+    const tablaTotal = document.createElement('table');
+    tablaTotal.style.width = '100%';
+    tablaTotal.style.borderCollapse = 'collapse';
+    tablaTotal.innerHTML = `
+      <thead>
+        <tr style="background:#333; color:white;">
+          <th>Cantidad</th>
+          <th>Invertido</th>
+          <th>Valor Venta</th>
+          <th>Utilidad Potencial</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="font-weight:bold; background:#d0d0d0;">
+          <td>${totalGeneralCantidad}</td>
+          <td>$${totalGeneralInvertido.toFixed(2)}</td>
+          <td>$${totalGeneralValorVenta.toFixed(2)}</td>
+          <td>$${(totalGeneralValorVenta - totalGeneralInvertido).toFixed(2)}</td>
+        </tr>
+      </tbody>
+    `;
+    contenido.appendChild(tablaTotal);
+
+    // botón cerrar al final
+    const btnCerrar = document.createElement('button');
+    btnCerrar.innerText = '❌ Cerrar';
+    btnCerrar.style.marginTop = '10px';
+    btnCerrar.onclick = cerrarModal;
+    contenido.appendChild(btnCerrar);
+
+  } catch (e) {
+    console.error('generarReporteProductos err', e);
+  }
+}
+
+
 
 
 // ----- Inicialización -----
