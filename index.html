@@ -8,9 +8,35 @@
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  
+
 </head>
 <body>
   <h2>📦 Control de Ventas e Inventario</h2>
+  
+  <div class="form-group">
+    <label for="buscarCodigo">Código del producto:</label>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <input
+        id="buscarCodigo"
+        type="text"
+        placeholder="🔎 Buscar por código o nombre..."
+        oninput="buscarPorCodigo(this.value)"
+        style="flex: 1;"
+      />
+      <button id="btnPrintLabel" type="button" class="btn btn-secondary" onclick="imprimirEtiqueta()">
+        🖨️ Imprimir etiqueta
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenedor oculto del código de barras -->
+  <div id="labelContainer" style="display:none; text-align:center;">
+    <h3 id="productLabelName"></h3>
+    <svg id="barcode"></svg>
+  </div>
+
 
   <div class="row">
     <label>Producto:</label>
