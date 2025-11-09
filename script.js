@@ -164,6 +164,28 @@ function abrirModalEditar(tipo) {
   contenido.appendChild(btnCerrar);
 }
 
+db.collection('config').doc('listas').onSnapshot(doc => {
+  const data = doc.data();
+  listaProductos = data.productos || [];
+  listaTallas = data.tallas || [];
+  localStorage.setItem('listaProductos', JSON.stringify(listaProductos));
+  localStorage.setItem('listaTallas', JSON.stringify(listaTallas));
+});
+
+
+async function guardarListas() {
+  try {
+    await db.collection('config').doc('listas').set({
+      productos: listaProductos,
+      tallas: listaTallas
+    });
+    localStorage.setItem('listaProductos', JSON.stringify(listaProductos));
+    localStorage.setItem('listaTallas', JSON.stringify(listaTallas));
+  } catch (e) {
+    console.error('Error al guardar listas en Firestore', e);
+  }
+}
+
 // ----- Autocompletar precios -----
 async function autocompletarPreciosPorProductoTalla() {
   const producto=document.getElementById('producto').value.trim();
@@ -479,7 +501,7 @@ async function generarReporteProductos(productosSeleccionados) {
 
 // ----- Inicialización -----
 window.addEventListener('load', () => {
-  guardarListas();
+  //guardarListas();
   // ocultar secciones por defecto
   document.getElementById('inventarioSection').style.display = 'none';
   document.getElementById('movimientosSection').style.display = 'none';
