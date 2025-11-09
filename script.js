@@ -496,7 +496,138 @@ async function generarReporteProductos(productosSeleccionados) {
   }
 }
 
+function toggleResumen() {
+  const resumen = document.getElementById('resumen');
+  if (resumen.style.display === 'none' || resumen.style.display === '') {
+    resumen.style.display = 'block';
+  } else {
+    resumen.style.display = 'none';
+  }
+}
 
+// ----- Buscar producto por código, nombre o talla -----
+async function buscarPorCodigo(codigo) {
+  if (!codigo) return;
+  
+  // 🔧 Normalizar: quitar espacios, pasar a minúsculas y eliminar acentos
+  const normalizeText = (str) =>
+    str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")  // quita acentos
+      .replace(/\s+/g, "");
+
+  const codigoNorm = normalizeText(codigo);
+
+  try {
+    const snapshot = await db.collection('productos').get();
+    let encontrado = null;
+
+    // Detectar si el código tiene texto y talla (ej: "calceta24" o "cinturonm")
+    const regex = /^([a-zA-Z\s]+)(\d+|ch|m|g|l|xl)?$/i;
+    const match = codigoNorm.match(regex);
+    const baseProducto = match ? match[1].trim() : codigoNorm;
+    const posibleTalla = match && match[2] ? match[2].toUpperCase() : null;
+
+    snapshot.forEach(doc => {
+      const p = doc.data();
+
+      // Normalizar producto y talla del registro
+      const productoNorm = normalizeText(p.producto || "");
+      const tallaNorm = normalizeText(p.talla || "");
+      const codigoExacto = (productoNorm + tallaNorm);
+
+      // Comparar sin acentos y sin espacios
+      if (codigoExacto === codigoNorm) {
+        encontrado = p;
+      }
+      else if (!posibleTalla && productoNorm.includes(baseProducto)) {
+        encontrado = p;
+      }
+    });
+
+    if (encontrado) {
+      document.getElementById('producto').value = encontrado.producto || '';
+      document.getElementById('talla').value = encontrado.talla || '';
+      document.getElementById('precioCompra').value = (encontrado.precioCompra || 0).toFixed(2);
+      document.getElementById('precioVenta').value = (encontrado.precioVenta || 0).toFixed(2);
+      console.log('✅ Producto encontrado:', encontrado);
+    } else {
+      console.log('⚠️ No se encontró coincidencia exacta.');
+    }
+  } catch (e) {
+    console.error('Error al buscar producto:', e);
+  }
+}
+
+
+// Function para imprimir codigo de barras
+
+// ----- Función para imprimir etiqueta de código de barras -----
+function imprimirEtiqueta() {
+  const codigo = document.getElementById("buscarCodigo").value.trim();
+  const producto = document.getElementById("producto")?.value.trim() || "";
+  const talla = document.getElementById("talla")?.value.trim() || "";
+
+  if (!codigo) {
+    alert("Por favor, ingresa o busca primero un código de producto.");
+    return;
+  }
+
+  // Mostrar contenedor temporalmente para renderizar
+  const labelContainer = document.getElementById("labelContainer");
+  const productLabelName = document.getElementById("productLabelName");
+  const barcode = document.getElementById("barcode");
+
+  // Título del label (ej. "Calceta 24")
+  productLabelName.textContent = producto && talla ? `${producto} ${talla}` : codigo;
+
+  // Generar código de barras
+  JsBarcode(barcode, codigo, {
+    format: "CODE128",
+    displayValue: true,
+    fontSize: 14,
+    height: 60,
+    lineColor: "#000000",
+  });
+
+  // Mostrar el contenedor antes de imprimir
+  labelContainer.style.display = "block";
+
+  // Crear una nueva ventana para impresión
+  const printWindow = window.open("", "_blank", "width=400,height=300");
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Etiqueta de Producto</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 20px;
+          }
+          h3 {
+            margin-bottom: 10px;
+          }
+          svg {
+            width: 250px;
+            height: 80px;
+          }
+        </style>
+      </head>
+      <body>
+        <h3>${productLabelName.textContent}</h3>
+        ${barcode.outerHTML}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+
+  // Ocultar contenedor nuevamente
+  labelContainer.style.display = "none";
+}
 
 
 // ----- Inicialización -----
