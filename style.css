@@ -29,3 +29,8 @@ hr { margin:12px 0; border: none; border-top: 1px solid #eee; }
 .row input + button {
   width: 120px; /* mismo ancho para todos los botones al lado de un input */
 }
+
+th.total-general {
+  background: #800080 !important;
+  color: white !important;
+}
