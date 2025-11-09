@@ -217,6 +217,24 @@ function abrirModalEditar(tipo) {
   contenido.appendChild(btnCerrar);
 }
 
+async function guardarListas() {
+  try {
+    await db.collection('config').doc('listas').set({
+      productos: listaProductos,
+      tallas: listaTallas
+    });
+  } catch (e) {
+    console.error('Error al guardar listas en Firestore', e);
+  }
+}
+
+db.collection('config').doc('listas').onSnapshot(doc => {
+  const data = doc.data();
+  listaProductos = data.productos || [];
+  listaTallas = data.tallas || [];
+  // Opcional: actualizar UI si estás mostrando la lista en tiempo real
+});
+
 // ----- Autocompletar precios al seleccionar talla -----
 async function autocompletarPreciosPorProductoTalla() {
   const producto = document.getElementById('producto').value.trim();
@@ -554,26 +572,23 @@ async function generarReporteProductos(productosSeleccionados) {
     const snapshot = await db.collection('productos').get();
 
     for (let producto of productosSeleccionados) {
-      // filtro por producto
       const items = snapshot.docs
         .map(doc => doc.data())
         .filter(p => p.producto === producto);
 
       if (items.length === 0) continue;
 
-      // Título del grupo
       const hGrupo = document.createElement('h4');
       hGrupo.innerText = `Producto: ${producto}`;
       hGrupo.style.marginTop = '12px';
       contenido.appendChild(hGrupo);
 
-      // Tabla del grupo
       const tabla = document.createElement('table');
       tabla.style.width = '100%';
       tabla.style.borderCollapse = 'collapse';
       tabla.innerHTML = `
         <thead>
-          <tr style="background:#007bff; color:white;">
+          <tr>
             <th>Talla</th>
             <th>Cantidad</th>
             <th>Invertido</th>
@@ -583,6 +598,12 @@ async function generarReporteProductos(productosSeleccionados) {
         </thead>
         <tbody></tbody>
       `;
+      const thead = tabla.querySelector('thead tr');
+      thead.style.setProperty('background', '#007bff', 'important');
+      thead.querySelectorAll('th').forEach(th => {
+        th.style.setProperty('color', 'white', 'important');
+      });
+
       const tbody = tabla.querySelector('tbody');
 
       let totalCantidad = 0;
@@ -590,8 +611,8 @@ async function generarReporteProductos(productosSeleccionados) {
       let totalValorVenta = 0;
 
       items.forEach(p => {
-        const invertido = (p.precioCompra||0)*(p.cantidad||0);
-        const valorVenta = (p.precioVenta||0)*(p.cantidad||0);
+        const invertido = (p.precioCompra || 0) * (p.cantidad || 0);
+        const valorVenta = (p.precioVenta || 0) * (p.cantidad || 0);
         const row = tbody.insertRow();
         row.innerHTML = `
           <td>${p.talla}</td>
@@ -605,7 +626,6 @@ async function generarReporteProductos(productosSeleccionados) {
         totalValorVenta += valorVenta;
       });
 
-      // fila total por producto
       const rowTotal = tbody.insertRow();
       rowTotal.style.fontWeight = 'bold';
       rowTotal.style.background = '#e0e0e0';
@@ -619,18 +639,15 @@ async function generarReporteProductos(productosSeleccionados) {
 
       contenido.appendChild(tabla);
 
-      // línea divisoria entre productos
       const hr = document.createElement('hr');
       hr.style.margin = '12px 0';
       contenido.appendChild(hr);
 
-      // sumar al total general
       totalGeneralCantidad += totalCantidad;
       totalGeneralInvertido += totalInvertido;
       totalGeneralValorVenta += totalValorVenta;
     }
 
-    // fila total general
     const hTotalGeneral = document.createElement('h4');
     hTotalGeneral.innerText = 'TOTAL GENERAL';
     hTotalGeneral.style.marginTop = '12px';
@@ -641,11 +658,11 @@ async function generarReporteProductos(productosSeleccionados) {
     tablaTotal.style.borderCollapse = 'collapse';
     tablaTotal.innerHTML = `
       <thead>
-        <tr style="background:#333; color:white;">
-          <th>Cantidad</th>
-          <th>Invertido</th>
-          <th>Valor Venta</th>
-          <th>Utilidad Potencial</th>
+        <tr>
+          <th class="total-general">Cantidad</th>
+          <th class="total-general">Invertido</th>
+          <th class="total-general">Valor Venta</th>
+          <th class="total-general">Utilidad Potencial</th>
         </tr>
       </thead>
       <tbody>
@@ -657,9 +674,14 @@ async function generarReporteProductos(productosSeleccionados) {
         </tr>
       </tbody>
     `;
+    const theadTotal = tablaTotal.querySelector('thead tr');
+    theadTotal.style.setProperty('background', '#800080', 'important');
+    theadTotal.querySelectorAll('th').forEach(th => {
+      th.style.setProperty('color', 'white', 'important');
+    });
+
     contenido.appendChild(tablaTotal);
 
-    // botón cerrar al final
     const btnCerrar = document.createElement('button');
     btnCerrar.innerText = '❌ Cerrar';
     btnCerrar.style.marginTop = '10px';
