@@ -137,32 +137,70 @@ function abrirModalNumero(campoId, opts = {allowDecimal:false}) {
 
 // ----- Editar listas -----
 function abrirModalEditar(tipo) {
-  const modal=document.getElementById('modal');
-  const contenido=document.getElementById('contenidoModal');
-  modal.style.display='flex';contenido.innerHTML='';
-  const lista=tipo==='producto'?listaProductos:listaTallas;
-  contenido.innerHTML=`<h3>Editar ${tipo==='producto'?'Productos':'Tallas'}</h3>`;
-  lista.forEach((item,idx)=>{
-    const div=document.createElement('div');div.className='list-item';
-    const span=document.createElement('span');span.innerText=item;
-    const actions=document.createElement('div');
-    const btnDel=document.createElement('button');btnDel.innerText='❌';btnDel.className='small';
-    btnDel.onclick=()=>{if(confirm('Eliminar "'+item+'"?')){lista.splice(idx,1);guardarListas();abrirModalEditar(tipo);}};
+  const modal = document.getElementById('modal');
+  const contenido = document.getElementById('contenidoModal');
+  modal.style.display = 'flex';
+  contenido.innerHTML = '';
+  const lista = tipo === 'producto' ? listaProductos : listaTallas;
+  contenido.innerHTML = `<h3>Editar ${tipo === 'producto' ? 'Productos' : 'Tallas'}</h3>`;
+
+  lista.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'list-item';
+    const span = document.createElement('span');
+    span.innerText = item;
+
+    const actions = document.createElement('div');
+    const btnDel = document.createElement('button');
+    btnDel.innerText = '❌';
+    btnDel.className = 'small';
+    btnDel.onclick = () => {
+      if (confirm(`¿Eliminar "${item}"?`)) {
+        lista.splice(idx, 1);
+        guardarListas();
+        // cerramos y reabrimos el modal
+        cerrarModal();
+        setTimeout(() => abrirModalEditar(tipo), 100);
+      }
+    };
+
     actions.appendChild(btnDel);
-    div.appendChild(span);div.appendChild(actions);
+    div.appendChild(span);
+    div.appendChild(actions);
     contenido.appendChild(div);
   });
+
   contenido.appendChild(document.createElement('hr'));
-  const inputNuevo=document.createElement('input');inputNuevo.placeholder=tipo==='producto'?'Nuevo producto':'Nueva talla';
-  inputNuevo.style.width='70%';inputNuevo.style.padding='8px';
+
+  const inputNuevo = document.createElement('input');
+  inputNuevo.placeholder = tipo === 'producto' ? 'Nuevo producto' : 'Nueva talla';
+  inputNuevo.style.width = '70%';
+  inputNuevo.style.padding = '8px';
   contenido.appendChild(inputNuevo);
-  const btnAdd=document.createElement('button');btnAdd.innerText='Agregar';btnAdd.style.marginLeft='8px';
-  btnAdd.onclick=()=>{const val=inputNuevo.value.trim();if(!val)return alert('Ingresa un valor');if(lista.includes(val))return alert('Ya existe');lista.push(val);guardarListas();abrirModalEditar(tipo);};
+
+  const btnAdd = document.createElement('button');
+  btnAdd.innerText = 'Agregar';
+  btnAdd.style.marginLeft = '8px';
+  btnAdd.onclick = () => {
+    const val = inputNuevo.value.trim();
+    if (!val) return alert('Ingresa un valor');
+    if (lista.includes(val)) return alert('Ya existe');
+    lista.push(val);
+    guardarListas();
+
+    // 👇 cerramos y reabrimos para que el DOM se limpie
+    cerrarModal();
+    setTimeout(() => abrirModalEditar(tipo), 100);
+  };
   contenido.appendChild(btnAdd);
+
   contenido.appendChild(document.createElement('hr'));
-  const btnCerrar=document.createElement('button');btnCerrar.innerText='Cerrar';btnCerrar.onclick=cerrarModal;
+  const btnCerrar = document.createElement('button');
+  btnCerrar.innerText = 'Cerrar';
+  btnCerrar.onclick = cerrarModal;
   contenido.appendChild(btnCerrar);
 }
+
 
 db.collection('config').doc('listas').onSnapshot(doc => {
   const data = doc.data();
@@ -574,28 +612,12 @@ function imprimirEtiqueta() {
     return;
   }
 
-  // Mostrar contenedor temporalmente para renderizar
-  const labelContainer = document.getElementById("labelContainer");
-  const productLabelName = document.getElementById("productLabelName");
-  const barcode = document.getElementById("barcode");
+  const labelName = producto && talla ? `${producto} ${talla}` : codigo;
 
-  // Título del label (ej. "Calceta 24")
-  productLabelName.textContent = producto && talla ? `${producto} ${talla}` : codigo;
+  // Crear una nueva ventana para imprimir
+  const printWindow = window.open("", "_blank", "width=400,height=400");
 
-  // Generar código de barras
-  JsBarcode(barcode, codigo, {
-    format: "CODE128",
-    displayValue: true,
-    fontSize: 14,
-    height: 60,
-    lineColor: "#000000",
-  });
-
-  // Mostrar el contenedor antes de imprimir
-  labelContainer.style.display = "block";
-
-  // Crear una nueva ventana para impresión
-  const printWindow = window.open("", "_blank", "width=400,height=300");
+  // Escribimos la estructura base
   printWindow.document.write(`
     <html>
       <head>
@@ -604,7 +626,7 @@ function imprimirEtiqueta() {
           body {
             font-family: Arial, sans-serif;
             text-align: center;
-            padding-top: 20px;
+            padding-top: 10px;
           }
           h3 {
             margin-bottom: 10px;
@@ -613,22 +635,73 @@ function imprimirEtiqueta() {
             width: 250px;
             height: 80px;
           }
+          #qrcode {
+            margin-top: 10px;
+          }
         </style>
       </head>
       <body>
-        <h3>${productLabelName.textContent}</h3>
-        ${barcode.outerHTML}
+        <h3>${labelName}</h3>
+        <svg id="barcode"></svg>
+        <div id="qrcode"></div>
+
+        <!-- Cargar librerías dentro de la ventana -->
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+        <script>
+          // Generar el código de barras
+          JsBarcode(document.getElementById("barcode"), "${codigo}", {
+            format: "CODE128",
+            displayValue: true,
+            fontSize: 14,
+            height: 60,
+            lineColor: "#000000",
+          });
+
+          // Generar el QR code
+          new QRCode(document.getElementById("qrcode"), {
+            text: "${codigo}",
+            width: 100,
+            height: 100,
+          });
+
+          // Esperar a que se renderice el QR antes de imprimir
+          setTimeout(() => {
+            window.print();
+            window.onafterprint = () => window.close();
+          }, 500);
+        <\/script>
       </body>
     </html>
   `);
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
 
-  // Ocultar contenedor nuevamente
-  labelContainer.style.display = "none";
+  printWindow.document.close();
 }
 
+
+
+// Doble clic en el campo de búsqueda => copiar producto + talla
+document.getElementById('buscarCodigo').addEventListener('dblclick', () => {
+  const producto = (document.getElementById('producto')?.value || '').trim();
+  const talla = (document.getElementById('talla')?.value || '').trim();
+
+  if (!producto && !talla) {
+    alert('No hay valores en Producto o Talla para copiar.');
+    return;
+  }
+
+  // Combinar con espacio si ambos existen
+  const codigo = talla ? `${producto} ${talla}` : producto;
+
+  // Asignar al input de búsqueda
+  const inputBuscar = document.getElementById('buscarCodigo');
+  inputBuscar.value = codigo;
+
+  // Ejecutar la búsqueda automáticamente (opcional)
+  if (typeof buscarPorCodigo === 'function') {
+    buscarPorCodigo(codigo);
+  }
+});
 
 // ----- Inicialización -----
 window.addEventListener('load', () => {
