@@ -602,6 +602,7 @@ async function buscarPorCodigo(codigo) {
 // Function para imprimir codigo de barras
 
 // ----- Función para imprimir etiqueta de código de barras -----
+
 function imprimirEtiqueta() {
   const codigo = document.getElementById("buscarCodigo").value.trim();
   const producto = document.getElementById("producto")?.value.trim() || "";
@@ -615,9 +616,9 @@ function imprimirEtiqueta() {
   const labelName = producto && talla ? `${producto} ${talla}` : codigo;
 
   // Crear una nueva ventana para imprimir
-  const printWindow = window.open("", "_blank", "width=400,height=400");
+  const printWindow = window.open("", "_blank", "width=450,height=500");
 
-  // Escribimos la estructura base
+  // Escribir HTML con estilos mejorados y centrado
   printWindow.document.write(`
     <html>
       <head>
@@ -626,50 +627,72 @@ function imprimirEtiqueta() {
           body {
             font-family: Arial, sans-serif;
             text-align: center;
-            padding-top: 10px;
+            padding: 20px;
+            margin: 0;
           }
           h3 {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 18px;
+          }
+          .barcode-container, .qr-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px auto;
           }
           svg {
-            width: 250px;
-            height: 80px;
+            width: 300px;
+            height: 100px;
           }
-          #qrcode {
-            margin-top: 10px;
+          #qrcode canvas {
+            width: 150px !important;
+            height: 150px !important;
+          }
+          h4 {
+            margin-top: 15px;
+            font-size: 16px;
+            font-weight: bold;
           }
         </style>
       </head>
       <body>
-        <h3>${labelName}</h3>
-        <svg id="barcode"></svg>
-        <div id="qrcode"></div>
+        <h3>Etiqueta de Producto</h3>
+
+        <div class="barcode-container">
+          <svg id="barcode"></svg>
+        </div>
+
+        <div class="qr-container">
+          <div id="qrcode"></div>
+        </div>
+
+        <h4>${labelName}</h4>
 
         <!-- Cargar librerías dentro de la ventana -->
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
         <script>
-          // Generar el código de barras
+          // Generar código de barras
           JsBarcode(document.getElementById("barcode"), "${codigo}", {
             format: "CODE128",
             displayValue: true,
-            fontSize: 14,
-            height: 60,
+            fontSize: 18,
+            height: 100,
             lineColor: "#000000",
           });
 
-          // Generar el QR code
+          // Generar código QR
           new QRCode(document.getElementById("qrcode"), {
             text: "${codigo}",
-            width: 100,
-            height: 100,
+            width: 150,
+            height: 150,
           });
 
-          // Esperar a que se renderice el QR antes de imprimir
+          // Esperar un momento para que se rendericen los gráficos
           setTimeout(() => {
             window.print();
             window.onafterprint = () => window.close();
-          }, 500);
+          }, 700);
         <\/script>
       </body>
     </html>
@@ -677,6 +700,7 @@ function imprimirEtiqueta() {
 
   printWindow.document.close();
 }
+
 
 
 
