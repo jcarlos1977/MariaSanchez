@@ -96,43 +96,81 @@ window.onclick = (ev) => {
 };
 
 // ----- Modal numérico -----
-function abrirModalNumero(campoId, opts = {allowDecimal:false}) {
+function abrirModalNumero(campoId, opts = { allowDecimal: false }) {
   const modal = document.getElementById('modal');
   const contenido = document.getElementById('contenidoModal');
   modal.style.display = 'flex';
-  const current = document.getElementById(campoId).value || '';
+
+  const current = ''; // Siempre inicia vacío
+
   contenido.innerHTML = `
     <div style="text-align:right;"><button id="btnCloseNum">❌ Cerrar</button></div>
     <h3>Ingresa valor</h3>
     <input id="valorTemp" type="text" readonly style="font-size:18px;padding:8px;width:90%;margin:8px 0;border-radius:6px;border:1px solid #ddd;" value="${current}" />
     <div class="keypad" id="keypadArea"></div>
     <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
-      <button id="btnClear">⌫</button>
+      <button id="btnClear">Limpiar</button>
       <button id="btnConfirm">✔️ Aceptar</button>
       <button id="btnCancel">✖️ Cancelar</button>
     </div>
   `;
+
   document.getElementById('btnCloseNum').onclick = cerrarModal;
+
   const keypad = document.getElementById('keypadArea');
-  for (let i=1;i<=9;i++){
-    const b=document.createElement('button');b.innerText=i;b.onclick=()=>appendDigit(i.toString());keypad.appendChild(b);
+  for (let i = 1; i <= 9; i++) {
+    const b = document.createElement('button');
+    b.innerText = i;
+    b.onclick = () => appendDigit(i.toString());
+    keypad.appendChild(b);
   }
-  const b0=document.createElement('button');b0.innerText='0';b0.onclick=()=>appendDigit('0');keypad.appendChild(b0);
-  if(opts.allowDecimal){const dp=document.createElement('button');dp.innerText='.';dp.onclick=()=>appendDecimal();keypad.appendChild(dp);}
-  document.getElementById('btnClear').onclick=()=>{const el=document.getElementById('valorTemp');el.value=el.value.slice(0,-1);};
-  document.getElementById('btnCancel').onclick=cerrarModal;
-  document.getElementById('btnConfirm').onclick=()=>{
-    const v=document.getElementById('valorTemp').value;
-    if(v!==''){
-      if(campoId==='precioCompra'||campoId==='precioVenta'){
-        const num=parseFloat(v)||0;
-        document.getElementById(campoId).value=num.toFixed(2);
-      } else document.getElementById(campoId).value=v;
+
+  const b0 = document.createElement('button');
+  b0.innerText = '0';
+  b0.onclick = () => appendDigit('0');
+  keypad.appendChild(b0);
+
+  if (opts.allowDecimal) {
+    const dp = document.createElement('button');
+    dp.innerText = '.';
+    dp.onclick = () => appendDecimal();
+    keypad.appendChild(dp);
+  }
+
+  document.getElementById('btnClear').onclick = () => {
+    document.getElementById('valorTemp').value = ''; // Borra todo
+  };
+
+  document.getElementById('btnCancel').onclick = cerrarModal;
+
+  document.getElementById('btnConfirm').onclick = () => {
+    const v = document.getElementById('valorTemp').value;
+    if (v !== '') {
+      if (campoId === 'precioCompra' || campoId === 'precioVenta') {
+        const num = parseFloat(v) || 0;
+        document.getElementById(campoId).value = num.toFixed(2);
+      } else {
+        document.getElementById(campoId).value = v;
+      }
     }
     cerrarModal();
   };
-  function appendDigit(d){const el=document.getElementById('valorTemp');if(el.value==='0'&&d!=='.')el.value=d;else el.value+=d;}
-  function appendDecimal(){const el=document.getElementById('valorTemp');if(!el.value.includes('.'))el.value=(el.value===''?'0.':el.value+'.');}
+
+  function appendDigit(d) {
+    const el = document.getElementById('valorTemp');
+    if (el.value === '0' && d !== '.') {
+      el.value = d;
+    } else {
+      el.value += d;
+    }
+  }
+
+  function appendDecimal() {
+    const el = document.getElementById('valorTemp');
+    if (!el.value.includes('.')) {
+      el.value = el.value === '' ? '0.' : el.value + '.';
+    }
+  }
 }
 
 // ----- Editar listas -----
@@ -759,6 +797,27 @@ function iniciarEscaneo() {
 }
 
 
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('producto').addEventListener('click', () => {
+    abrirModal('producto');
+  });
+
+  document.getElementById('talla').addEventListener('click', () => {
+    abrirModal('talla');
+  });
+
+  document.getElementById('cantidad').addEventListener('click', () => {
+    abrirModalNumero('cantidad', { allowDecimal: false });
+  });
+
+  document.getElementById('precioCompra').addEventListener('click', () => {
+    abrirModalNumero('precioCompra', { allowDecimal: true });
+  });
+
+  document.getElementById('precioVenta').addEventListener('click', () => {
+    abrirModalNumero('precioVenta', { allowDecimal: true });
+  });
+});
 
 // ----- Inicialización -----
 window.addEventListener('load', () => {
