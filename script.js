@@ -728,23 +728,33 @@ document.getElementById('buscarCodigo').addEventListener('dblclick', () => {
 
 function iniciarEscaneo() {
   const qrReader = new Html5Qrcode("qr-reader");
+
+  const config = {
+    fps: 15, // Más rápido que 10 fps
+    qrbox: { width: 280, height: 280 }, // Área de escaneo más amplia
+    aspectRatio: 1.777, // Mejora enfoque en móviles (16:9)
+    disableFlip: true, // No intenta leer códigos espejados
+    videoConstraints: {
+      facingMode: "environment", // Cámara trasera
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }
+  };
+
   qrReader.start(
-  { facingMode: "environment" }, // Usa la cámara trasera si está disponible
-  {
-  fps: 10,
-  qrbox: 250
-  },
-  (decodedText) => {
-  document.getElementById("buscarCodigo").value = decodedText;
-  buscarPorCodigo(decodedText); // Ejecuta tu función de búsqueda
-  qrReader.stop(); // Detiene el escaneo después de leer
-  document.getElementById("qr-reader").innerHTML = ""; // Limpia el contenedor
-  },
-  (errorMessage) => {
-  // Puedes ignorar errores de escaneo si no quieres mostrar nada
-  }
+    { facingMode: "environment" },
+    config,
+    (decodedText) => {
+      document.getElementById("buscarCodigo").value = decodedText;
+      buscarPorCodigo(decodedText); // Tu función de búsqueda
+      qrReader.stop(); // Detiene la cámara
+      document.getElementById("qr-reader").innerHTML = ""; // Limpia el contenedor
+    },
+    (errorMessage) => {
+      // Puedes ignorar errores de escaneo si no quieres mostrar nada
+    }
   ).catch((err) => {
-  console.error("Error al iniciar la cámara:", err);
+    console.error("Error al iniciar la cámara:", err);
   });
 }
 
