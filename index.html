@@ -11,6 +11,8 @@
   
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- === Librería para QR y códigos de barras === -->
+ <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 
   
 
@@ -18,6 +20,7 @@
 <body>
   <h2>📦 Control de Ventas e Inventario</h2>
   
+  <!-- === Campo de búsqueda con botón de escaneo e impresión === -->
   <div class="form-group">
     <label for="buscarCodigo">Código del producto:</label>
     <div style="display: flex; align-items: center; gap: 10px;">
@@ -26,12 +29,52 @@
         type="text"
         placeholder="🔎 Buscar por código o nombre..."
         oninput="buscarPorCodigo(this.value)"
-        style="flex: 1;"
+        style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
       />
+      <button id="btnScanCode" type="button" class="btn btn-info" onclick="iniciarEscaneo()">
+        📷 Escanear
+      </button>
       <button id="btnPrintLabel" type="button" class="btn btn-secondary" onclick="imprimirEtiqueta()">
         🖨️ Imprimir etiqueta
       </button>
     </div>
+  </div>
+
+  <!-- === Contenedor del escáner con fondo oscuro === -->
+  <div id="overlayEscaner" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0,0,0,0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  ">
+    <div style="position: relative; display: inline-block;">
+      <video id="scanner" width="300" height="220" style="
+        border: 2px solid #00e676;
+        border-radius: 10px;
+        box-shadow: 0 0 20px #00e676;
+      "></video>
+      <div style="
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        border: 2px dashed #00e676;
+        border-radius: 10px;
+        pointer-events: none;
+        box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+      "></div>
+    </div>
+    <button onclick="detenerEscaneo()" style="
+      margin-top: 20px;
+      background: #d9534f;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+    ">✖️ Cancelar</button>
   </div>
 
   <!-- Contenedor oculto del código de barras -->
