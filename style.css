@@ -63,3 +63,49 @@ th.total-general {
   font-size: 16px;
   text-align: center;
 }
+
+
+
+
+/* new css*/
+
+body.tecladoAbierto {
+  padding-bottom: 120px; /* espacio extra para que no se corte el contenido */
+}
+
+body.tecladoAbierto .row {
+  margin-bottom: 2px; /* reduce espacio vertical si se ve apretado */
+}
+
+body.tecladoAbierto input {
+  font-size: 17px; /* mejora visibilidad en móvil */
+}
+
+.full-height {
+  min-height: 100%;
+}
+
+input, button {
+  touch-action: manipulation;
+}
+
+/* Detecta cuando el teclado está abierto en móviles */
+body.tecladoAbierto {
+  padding-bottom: 120px; /* espacio para que no se tape contenido */
+}
+
+/* Reduce márgenes verticales si el teclado está activo */
+body.tecladoAbierto .row {
+  margin-bottom: 4px;
+}
+
+/* Mejora visibilidad de inputs en móviles */
+body.tecladoAbierto input {
+  font-size: 17px;
+}
+
+/* Asegura que el contenedor principal no use vh que se rompe en móviles */
+body, html {
+  min-height: 100%;
+  height: auto;
+}
