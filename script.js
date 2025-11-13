@@ -702,8 +702,6 @@ function imprimirEtiqueta() {
 }
 
 
-
-
 // Doble clic en el campo de búsqueda => copiar producto + talla
 document.getElementById('buscarCodigo').addEventListener('dblclick', () => {
   const producto = (document.getElementById('producto')?.value || '').trim();
@@ -727,62 +725,29 @@ document.getElementById('buscarCodigo').addEventListener('dblclick', () => {
   }
 });
 
-  let html5QrCode;
-  let isScanning = false;
-
-  async function iniciarEscaneo() {
-    const overlay = document.getElementById("overlayEscaner");
-    overlay.style.display = "flex";
-
-    if (isScanning) return;
-
-    html5QrCode = new Html5Qrcode("scanner");
-
-    try {
-      const devices = await Html5Qrcode.getCameras();
-      if (devices && devices.length) {
-        const camId = devices[0].id;
-
-        await html5QrCode.start(
-          camId,
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 150 },
-          },
-          (decodedText) => {
-            console.log("Código detectado:", decodedText);
-            document.getElementById("buscarCodigo").value = decodedText;
-            buscarPorCodigo(decodedText); // Usa tu función existente
-            detenerEscaneo();
-          },
-          (errorMessage) => {
-            // Ignorar errores menores mientras busca
-          }
-        );
-        isScanning = true;
-      } else {
-        alert("No se detectó ninguna cámara en este dispositivo.");
-      }
-    } catch (err) {
-      console.error("Error al acceder a la cámara:", err);
-      alert("No se pudo acceder a la cámara. Verifica permisos o HTTPS.");
-      detenerEscaneo();
-    }
+function iniciarEscaneo() {
+  const qrReader = new Html5Qrcode("qr-reader");
+  qrReader.start(
+  { facingMode: "environment" }, // Usa la cámara trasera si está disponible
+  {
+  fps: 10,
+  qrbox: 250
+  },
+  (decodedText) => {
+  document.getElementById("buscarCodigo").value = decodedText;
+  buscarPorCodigo(decodedText); // Ejecuta tu función de búsqueda
+  qrReader.stop(); // Detiene el escaneo después de leer
+  document.getElementById("qr-reader").innerHTML = ""; // Limpia el contenedor
+  },
+  (errorMessage) => {
+  // Puedes ignorar errores de escaneo si no quieres mostrar nada
   }
+  ).catch((err) => {
+  console.error("Error al iniciar la cámara:", err);
+  });
+}
 
-  function detenerEscaneo() {
-    if (html5QrCode) {
-      html5QrCode.stop()
-        .then(() => {
-          html5QrCode.clear();
-          isScanning = false;
-          document.getElementById("overlayEscaner").style.display = "none";
-        })
-        .catch(err => console.error("Error al detener escaneo:", err));
-    } else {
-      document.getElementById("overlayEscaner").style.display = "none";
-    }
-  }
+
 
 // ----- Inicialización -----
 window.addEventListener('load', () => {
@@ -801,4 +766,4 @@ window.abrirModalEditar = abrirModalEditar;
 window.cerrarModal = cerrarModal;
 window.toggleInventario = toggleInventario;
 window.toggleMovimientos = toggleMovimientos;
-window.actualizarDatos = actualizarDatos;
+//window.actualizarDatos = actualizarDatos;
