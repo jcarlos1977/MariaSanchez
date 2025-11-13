@@ -727,6 +727,63 @@ document.getElementById('buscarCodigo').addEventListener('dblclick', () => {
   }
 });
 
+  let html5QrCode;
+  let isScanning = false;
+
+  async function iniciarEscaneo() {
+    const overlay = document.getElementById("overlayEscaner");
+    overlay.style.display = "flex";
+
+    if (isScanning) return;
+
+    html5QrCode = new Html5Qrcode("scanner");
+
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length) {
+        const camId = devices[0].id;
+
+        await html5QrCode.start(
+          camId,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 150 },
+          },
+          (decodedText) => {
+            console.log("Código detectado:", decodedText);
+            document.getElementById("buscarCodigo").value = decodedText;
+            buscarPorCodigo(decodedText); // Usa tu función existente
+            detenerEscaneo();
+          },
+          (errorMessage) => {
+            // Ignorar errores menores mientras busca
+          }
+        );
+        isScanning = true;
+      } else {
+        alert("No se detectó ninguna cámara en este dispositivo.");
+      }
+    } catch (err) {
+      console.error("Error al acceder a la cámara:", err);
+      alert("No se pudo acceder a la cámara. Verifica permisos o HTTPS.");
+      detenerEscaneo();
+    }
+  }
+
+  function detenerEscaneo() {
+    if (html5QrCode) {
+      html5QrCode.stop()
+        .then(() => {
+          html5QrCode.clear();
+          isScanning = false;
+          document.getElementById("overlayEscaner").style.display = "none";
+        })
+        .catch(err => console.error("Error al detener escaneo:", err));
+    } else {
+      document.getElementById("overlayEscaner").style.display = "none";
+    }
+  }
+
 // ----- Inicialización -----
 window.addEventListener('load', () => {
   //guardarListas();
