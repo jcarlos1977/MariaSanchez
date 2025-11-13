@@ -34,3 +34,32 @@ th.total-general {
   background: #800080 !important;
   color: white !important;
 }
+
+.btnAccion {
+  min-width: 125px;       /* Asegura que todos tengan el mismo ancho mínimo */
+  padding: 8px 12px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.inputLargo {
+  width: 243px;         /* Ajusta según el ancho de tus botones */
+  padding: 6px 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+
+.labelInline {
+  white-space: nowrap;
+}
+
+.btnLargo {
+  min-width: 180px; /* Ajusta según lo que necesites */
+  padding: 10px 16px;
+  font-size: 16px;
+  text-align: center;
+}
