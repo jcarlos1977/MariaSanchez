@@ -19,25 +19,33 @@
   <h2>📦 Control de Ventas e Inventario</h2>
   
   <div class="form-group">
-    <label for="buscarCodigo">Código del producto:</label>
+    
+    <div>
+      <button id="btnPrintLabel" type="button" class="btn btn-secondary btnLargo" onclick="imprimirEtiqueta()">
+        🖨️ Imprimir etiqueta
+      </button>
+
+      <button type="button" class="btn btn-primary btnLargo" onclick="iniciarEscaneo()">
+        📷 Escanear código
+      </button>
+    </div><br>
+
+    <label for="buscarCodigo" class="labelInline">Código del producto:</label>
+    
+    <div id="qr-reader" style="width: 300px; margin-top: 10px;"></div>
+    
     <div style="display: flex; align-items: center; gap: 10px;">
       <input
         id="buscarCodigo"
         type="text"
         placeholder="🔎 Buscar por código o nombre..."
         oninput="buscarPorCodigo(this.value)"
-        style="flex: 1;"
+        style="width: 370px;"
       />
-      <button id="btnPrintLabel" type="button" class="btn btn-secondary" onclick="imprimirEtiqueta()">
-        🖨️ Imprimir etiqueta
-      </button>
-      
-      <button type="button" onclick="iniciarEscaneo()" class="btn btn-primary">
-        📷 Escanear código
-      </button>
-      <div id="qr-reader" style="width: 300px; margin-top: 10px;"></div>
-      
+     
+
     </div>
+
   </div>
 
   <!-- Contenedor oculto del código de barras -->
@@ -49,52 +57,50 @@
 
   <div class="row">
     <label>Producto:</label>
-    <input type="text" id="producto" readonly placeholder="Selecciona producto" />
-    <button onclick="abrirModal('producto')">Seleccionar</button>
+    <input type="text" id="producto" class="inputLargo" readonly placeholder="Selecciona producto" />
+    <!--<button onclick="abrirModal('producto')">Seleccionar</button> -->
     <!-- oculto en el UI principal pero disponible dentro de modales -->
     <button class="small" id="btnEditarProductos" style="display:none;" onclick="abrirModalEditar('producto')">⚙️ Editar productos</button>
   </div>
 
   <div class="row">
     <label>Talla:</label>
-    <input type="text" id="talla" readonly placeholder="Selecciona talla" />
-    <button onclick="abrirModal('talla')">Seleccionar</button>
+    <input type="text" id="talla" class="inputLargo" readonly placeholder="Selecciona talla" />
+    <!--<button onclick="abrirModal('talla')">Seleccionar</button> -->
     <button class="small" id="btnEditarTallas" style="display:none;" onclick="abrirModalEditar('talla')">⚙️ Editar tallas</button>
   </div>
 
   <div class="row">
     <label>Cantidad:</label>
-    <input type="text" id="cantidad" readonly placeholder="0" />
-    <button onclick="abrirModalNumero('cantidad', {allowDecimal:false})">Teclado</button>
+    <input type="text" id="cantidad" class="inputLargo" readonly placeholder="0" />
+    <!-- <button onclick="abrirModalNumero('cantidad', {allowDecimal:false})">Teclado</button> -->
   </div>
 
   <div class="row">
     <label>Precio Compra:</label>
-    <input type="text" id="precioCompra" readonly placeholder="0.00" />
-    <button onclick="abrirModalNumero('precioCompra', {allowDecimal:true})">Teclado</button>
+    <input type="text" id="precioCompra" class="inputLargo" readonly placeholder="" />
+    <!-- <button onclick="abrirModalNumero('precioCompra', {allowDecimal:true})">Teclado</button> -->
   </div>
 
   <div class="row">
     <label>Precio Venta:</label>
-    <input type="text" id="precioVenta" readonly placeholder="0.00" />
-    <button onclick="abrirModalNumero('precioVenta', {allowDecimal:true})">Teclado</button>
+    <input type="text" id="precioVenta" class="inputLargo" readonly placeholder="" />
+    <!-- <button onclick="abrirModalNumero('precioVenta', {allowDecimal:true})">Teclado</button> -->
   </div>
 
   <div class="row">
-    <button onclick="agregarProducto()">➕ Agregar (compra)</button>
-    <button onclick="venderProducto()">💸 Vender</button>
-    <button onclick="toggleInventario()">📊 Ver Inventario</button>     
+    <button class="btnAccion" onclick="agregarProducto()">➕ Agregar</button>
+    <button class="btnAccion" onclick="venderProducto()">💸 Vender</button>
+    <button class="btnAccion" onclick="toggleInventario()">📊 Inventario</button>
   </div>
 
-  <div class="row">    
-    <button onclick="toggleMovimientos()">📜 Ver Movimientos</button>
-    <button onclick="actualizarDatos()">🔄 Actualizar datos</button>
-    <button onclick="abrirModalReporte()">📈 Reporte por Producto</button>    
-  </div>
-  
   <div class="row">
-    <button id="btnToggleResumen" onclick="toggleResumen()">📊 Mostrar/Ocultar Resumen</button>
+    <button class="btnAccion" onclick="toggleMovimientos()">📜 Movimientos</button>
+    <!-- <button onclick="actualizarDatos()">🔄 Actualizar datos</button> -->
+    <button class="btnAccion" onclick="abrirModalReporte()">📈 Reporte</button>
+    <button class="btnAccion" id="btnToggleResumen" onclick="toggleResumen()">📊 Resumen</button>
   </div>
+    
 
   <div class="summary" id="resumen" style="display:none;">
     <h3 id="totalInvertido">Total invertido: $0</h3>
