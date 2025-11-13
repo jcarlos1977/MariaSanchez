@@ -819,6 +819,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+window.addEventListener('resize', () => {
+  const altura = window.innerHeight;
+  const cuerpo = document.body;
+
+  if (altura < 500) {
+    cuerpo.classList.add('tecladoAbierto');
+  } else {
+    cuerpo.classList.remove('tecladoAbierto');
+  }
+});
+
 // ----- Inicialización -----
 window.addEventListener('load', () => {
   //guardarListas();
@@ -828,6 +839,8 @@ window.addEventListener('load', () => {
   // precargar resumen
   calcularResumen();
 });
+
+
 
 // ----- exportar funciones útiles al scope global (opcional) -----
 window.abrirModal = abrirModal;
