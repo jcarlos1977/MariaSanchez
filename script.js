@@ -728,19 +728,29 @@ document.getElementById('buscarCodigo').addEventListener('dblclick', () => {
 
 function iniciarEscaneo() {
   const qrReader = new Html5Qrcode("qr-reader");
+
   qrReader.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
+    { facingMode: "environment" }, // Cámara trasera
+    {
+      fps: 15, // Más cuadros por segundo = escaneo más rápido
+      qrbox: { width: 300, height: 300 }, // Área de escaneo más grande
+      aspectRatio: 1.0, // Mantiene proporción cuadrada
+      disableFlip: true // No intenta leer códigos espejados
+    },
     (decodedText) => {
-      alert("Código detectado: " + decodedText);
+      document.getElementById("buscarCodigo").value = decodedText;
+      buscarPorCodigo(decodedText);
       qrReader.stop();
       document.getElementById("qr-reader").innerHTML = "";
     },
-    (errorMessage) => {}
+    (errorMessage) => {
+      // Puedes ignorar errores de escaneo si no quieres mostrar nada
+    }
   ).catch((err) => {
     console.error("Error al iniciar la cámara:", err);
   });
 }
+
 
 
 // ----- Inicialización -----
