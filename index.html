@@ -12,7 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- === Librería para QR y códigos de barras === -->
- <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 
   
 
@@ -52,11 +52,14 @@
     flex-direction: column;
   ">
     <div style="position: relative; display: inline-block;">
-      <video id="scanner" width="300" height="220" style="
+      <div id="scanner" style="
+        width: 300px;
+        height: 220px;
         border: 2px solid #00e676;
         border-radius: 10px;
         box-shadow: 0 0 20px #00e676;
-      "></video>
+        background: black;
+      "></div>
       <div style="
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -76,6 +79,7 @@
       font-size: 16px;
     ">✖️ Cancelar</button>
   </div>
+
 
   <!-- Contenedor oculto del código de barras -->
   <div id="labelContainer" style="display:none; text-align:center;">
