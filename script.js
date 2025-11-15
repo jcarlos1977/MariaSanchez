@@ -12,6 +12,44 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      mostrarApp();
+    })
+    .catch((error) => {
+      document.getElementById("loginError").innerText = "❌ Credenciales incorrectas o usuario no registrado.";
+      console.error("Error de login:", error);
+    });
+}
+
+function mostrarApp() {
+  document.getElementById("loginContainer").style.display = "none";
+  document.getElementById("appContent").style.display = "block";
+}
+
+// Mantener sesión activa si ya está logueado
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    document.getElementById("loginContainer").style.display = "none";
+    document.getElementById("appContent").style.display = "block";
+  } else {
+    document.getElementById("loginContainer").style.display = "block";
+    document.getElementById("appContent").style.display = "none";
+  }
+});
+
+// Cerrar sesión
+function logout() {
+  firebase.auth().signOut().then(() => {
+    location.reload(); // Opcional: recarga la página para volver al login
+  });
+}
+
+
 // ----- Listas locales -----
 let listaProductos = JSON.parse(localStorage.getItem('listaProductos')) || ["Sandalia","Calceta","Zapato","Cinturón"];
 let listaTallas = JSON.parse(localStorage.getItem('listaTallas')) || ["CH","M","G","24","25","26"];
