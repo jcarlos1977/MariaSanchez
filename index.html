@@ -9,6 +9,8 @@
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth-compat.js"></script>
+
   
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -17,126 +19,111 @@
 
 </head>
 <body>
-  <h2>📦 Control de Ventas e Inventario</h2>
   
-  <div class="form-group">
-    
-    <div>
-      <button id="btnPrintLabel" type="button" class="btn btn-secondary btnLargo" onclick="imprimirEtiqueta()">
-        🖨️ Imprimir etiqueta
-      </button>
+  <!-- 🔐 LOGIN -->
+  <div id="loginContainer">
+    <h3>🔐 Iniciar sesión</h3>
+    <input type="email" id="email" placeholder="Correo electrónico" /><br><br>
+    <input type="password" id="password" placeholder="Contraseña" /><br><br>
+    <button onclick="login()">Ingresar</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
 
-      <button id="btnScanToggle" type="button" class="btn btn-primary btnLargo">
-        📷 Escanear código
-      </button>
-      <div id="qr-reader" style="width: 300px; margin-top: 10px;"></div>
+  <!-- ✅ CONTENIDO PRINCIPAL (oculto hasta login) -->
+  <div id="appContent" style="display:none;">
+    <button onclick="logout()">🚪 Cerrar sesión</button>
 
-    </div><br>
+    <h2>📦 Control de Ventas e Inventario</h2>
 
-    <label for="buscarCodigo" class="labelInline">Código del producto:</label>
-    
-    <div id="qr-reader" style="width: 300px; margin-top: 10px;"></div>
-    
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <input
-        id="buscarCodigo"
-        type="text"
-        placeholder="🔎 Buscar por código o nombre..."
-        oninput="buscarPorCodigo(this.value)"
-        style="width: 370px;"
-      />
-     
+    <div class="form-group">
+      <div>
+        <button id="btnPrintLabel" type="button" class="btn btn-secondary btnLargo" onclick="imprimirEtiqueta()">🖨️ Imprimir etiqueta</button>
+        <button id="btnScanToggle" type="button" class="btn btn-primary btnLargo">📷 Escanear código</button>
+        <div id="qr-reader" style="width: 300px; margin-top: 10px;"></div>
+      </div><br>
 
+      <label for="buscarCodigo" class="labelInline">Código del producto:</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input id="buscarCodigo" type="text" placeholder="🔎 Buscar por código o nombre..." oninput="buscarPorCodigo(this.value)" style="width: 370px;" />
+      </div>
     </div>
 
+    <div id="labelContainer" style="display:none; text-align:center;">
+      <h3 id="productLabelName"></h3>
+      <svg id="barcode"></svg>
+    </div>
+
+    <div class="row">
+      <label>Producto:</label>
+      <input type="text" id="producto" class="inputLargo" readonly placeholder="Selecciona producto" />
+      <button class="small" id="btnEditarProductos" style="display:none;" onclick="abrirModalEditar('producto')">⚙️ Editar productos</button>
+    </div>
+
+    <div class="row">
+      <label>Talla:</label>
+      <input type="text" id="talla" class="inputLargo" readonly placeholder="Selecciona talla" />
+      <button class="small" id="btnEditarTallas" style="display:none;" onclick="abrirModalEditar('talla')">⚙️ Editar tallas</button>
+    </div>
+
+    <div class="row">
+      <label>Cantidad:</label>
+      <input type="text" id="cantidad" class="inputLargo" readonly placeholder="0" />
+    </div>
+
+    <div class="row">
+      <label>Precio Compra:</label>
+      <input type="text" id="precioCompra" class="inputLargo" readonly />
+    </div>
+
+    <div class="row">
+      <label>Precio Venta:</label>
+      <input type="text" id="precioVenta" class="inputLargo" readonly />
+    </div>
+
+    <div class="row">
+      <button class="btnAccion" onclick="agregarProducto()">➕ Agregar</button>
+      <button class="btnAccion" onclick="venderProducto()">💸 Vender</button>
+      <button class="btnAccion" onclick="toggleInventario()">📊 Inventario</button>
+    </div>
+
+    <div class="row">
+      <button class="btnAccion" onclick="toggleMovimientos()">📜 Movimientos</button>
+      <button class="btnAccion" onclick="abrirModalReporte()">📈 Reporte</button>
+      <button class="btnAccion" id="btnToggleResumen" onclick="toggleResumen()">📊 Resumen</button>
+    </div>
+
+    <div class="summary" id="resumen" style="display:none;">
+      <h3 id="totalInvertido">Total invertido: $0</h3>
+      <h3 id="totalVendido">Total vendido: $0</h3>
+      <h3 id="utilidad">Utilidad: $0</h3>
+    </div>
+
+    <section id="inventarioSection" class="hidden-section">
+      <h3>📦 Inventario Actual</h3>
+      <table id="tablaInventario">
+        <thead>
+          <tr><th>Producto</th><th>Talla</th><th>Cantidad</th><th>Compra</th><th>Venta</th><th>Invertido</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="movimientosSection" class="hidden-section">
+      <h3>📜 Historial de Movimientos</h3>
+      <table id="tablaMovimientos">
+        <thead>
+          <tr><th>Tipo</th><th>Producto</th><th>Talla</th><th>Cantidad</th><th>Total</th><th>Fecha</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <div id="modal" class="modal" style="display:none; align-items:center;">
+      <div id="contenidoModal" class="modal-content"></div>
+    </div>
   </div>
 
-  <!-- Contenedor oculto del código de barras -->
-  <div id="labelContainer" style="display:none; text-align:center;">
-    <h3 id="productLabelName"></h3>
-    <svg id="barcode"></svg>
-  </div>
 
-
-  <div class="row">
-    <label>Producto:</label>
-    <input type="text" id="producto" class="inputLargo" readonly placeholder="Selecciona producto" />
-    <!--<button onclick="abrirModal('producto')">Seleccionar</button> -->
-    <!-- oculto en el UI principal pero disponible dentro de modales -->
-    <button class="small" id="btnEditarProductos" style="display:none;" onclick="abrirModalEditar('producto')">⚙️ Editar productos</button>
-  </div>
-
-  <div class="row">
-    <label>Talla:</label>
-    <input type="text" id="talla" class="inputLargo" readonly placeholder="Selecciona talla" />
-    <!--<button onclick="abrirModal('talla')">Seleccionar</button> -->
-    <button class="small" id="btnEditarTallas" style="display:none;" onclick="abrirModalEditar('talla')">⚙️ Editar tallas</button>
-  </div>
-
-  <div class="row">
-    <label>Cantidad:</label>
-    <input type="text" id="cantidad" class="inputLargo" readonly placeholder="0" />
-    <!-- <button onclick="abrirModalNumero('cantidad', {allowDecimal:false})">Teclado</button> -->
-  </div>
-
-  <div class="row">
-    <label>Precio Compra:</label>
-    <input type="text" id="precioCompra" class="inputLargo" readonly placeholder="" />
-    <!-- <button onclick="abrirModalNumero('precioCompra', {allowDecimal:true})">Teclado</button> -->
-  </div>
-
-  <div class="row">
-    <label>Precio Venta:</label>
-    <input type="text" id="precioVenta" class="inputLargo" readonly placeholder="" />
-    <!-- <button onclick="abrirModalNumero('precioVenta', {allowDecimal:true})">Teclado</button> -->
-  </div>
-
-  <div class="row">
-    <button class="btnAccion" onclick="agregarProducto()">➕ Agregar</button>
-    <button class="btnAccion" onclick="venderProducto()">💸 Vender</button>
-    <button class="btnAccion" onclick="toggleInventario()">📊 Inventario</button>
-  </div>
-
-  <div class="row">
-    <button class="btnAccion" onclick="toggleMovimientos()">📜 Movimientos</button>
-    <!-- <button onclick="actualizarDatos()">🔄 Actualizar datos</button> -->
-    <button class="btnAccion" onclick="abrirModalReporte()">📈 Reporte</button>
-    <button class="btnAccion" id="btnToggleResumen" onclick="toggleResumen()">📊 Resumen</button>
-  </div>
-    
-
-  <div class="summary" id="resumen" style="display:none;">
-    <h3 id="totalInvertido">Total invertido: $0</h3>
-    <h3 id="totalVendido">Total vendido: $0</h3>
-    <h3 id="utilidad">Utilidad: $0</h3>
-  </div>
-
-  
-  <!-- Secciones ocultas por defecto -->
-  <section id="inventarioSection" class="hidden-section">
-    <h3>📦 Inventario Actual</h3>
-    <table id="tablaInventario">
-      <thead>
-        <tr><th>Producto</th><th>Talla</th><th>Cantidad</th><th>Compra</th><th>Venta</th><th>Invertido</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <section id="movimientosSection" class="hidden-section">
-    <h3>📜 Historial de Movimientos</h3>
-    <table id="tablaMovimientos">
-      <thead>
-        <tr><th>Tipo</th><th>Producto</th><th>Talla</th><th>Cantidad</th><th>Total</th><th>Fecha</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <!-- Modal genérico -->
-  <div id="modal" class="modal" style="display:none; align-items:center;">
-    <div id="contenidoModal" class="modal-content"></div>
-  </div>
 
   <script src="script.js"></script>
 </body>
