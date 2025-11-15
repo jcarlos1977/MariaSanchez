@@ -764,16 +764,29 @@ document.getElementById('buscarCodigo').addEventListener('dblclick', () => {
 });
 
 
+let escaneoActivo = false;
+let qrReader = null;
+
+document.getElementById("btnScanToggle").addEventListener("click", () => {
+  if (!escaneoActivo) {
+    iniciarEscaneo();
+  } else {
+    detenerEscaneo();
+  }
+});
+
 function iniciarEscaneo() {
-  const qrReader = new Html5Qrcode("qr-reader");
+  if (!qrReader) {
+    qrReader = new Html5Qrcode("qr-reader");
+  }
 
   const config = {
-    fps: 15, // Más rápido que 10 fps
-    qrbox: { width: 280, height: 280 }, // Área de escaneo más amplia
-    aspectRatio: 1.777, // Mejora enfoque en móviles (16:9)
-    disableFlip: true, // No intenta leer códigos espejados
+    fps: 15,
+    qrbox: { width: 280, height: 280 },
+    aspectRatio: 1.777,
+    disableFlip: true,
     videoConstraints: {
-      facingMode: "environment", // Cámara trasera
+      facingMode: "environment",
       width: { ideal: 1280 },
       height: { ideal: 720 }
     }
@@ -784,16 +797,30 @@ function iniciarEscaneo() {
     config,
     (decodedText) => {
       document.getElementById("buscarCodigo").value = decodedText;
-      buscarPorCodigo(decodedText); // Tu función de búsqueda
-      qrReader.stop(); // Detiene la cámara
-      document.getElementById("qr-reader").innerHTML = ""; // Limpia el contenedor
+      buscarPorCodigo(decodedText);
+      detenerEscaneo(); // Detener automáticamente después de escanear
     },
     (errorMessage) => {
-      // Puedes ignorar errores de escaneo si no quieres mostrar nada
+      // Ignorar errores de escaneo
     }
-  ).catch((err) => {
+  ).then(() => {
+    escaneoActivo = true;
+    document.getElementById("btnScanToggle").innerText = "🛑 Detener escaneo";
+  }).catch((err) => {
     console.error("Error al iniciar la cámara:", err);
   });
+}
+
+function detenerEscaneo() {
+  if (qrReader) {
+    qrReader.stop().then(() => {
+      escaneoActivo = false;
+      document.getElementById("qr-reader").innerHTML = "";
+      document.getElementById("btnScanToggle").innerText = "📷 Escanear código";
+    }).catch((err) => {
+      console.error("Error al detener la cámara:", err);
+    });
+  }
 }
 
 
