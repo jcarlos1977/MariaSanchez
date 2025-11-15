@@ -26,9 +26,11 @@
         🖨️ Imprimir etiqueta
       </button>
 
-      <button type="button" class="btn btn-primary btnLargo" onclick="iniciarEscaneo()">
+      <button id="btnScanToggle" type="button" class="btn btn-primary btnLargo">
         📷 Escanear código
       </button>
+      <div id="qr-reader" style="width: 300px; margin-top: 10px;"></div>
+
     </div><br>
 
     <label for="buscarCodigo" class="labelInline">Código del producto:</label>
