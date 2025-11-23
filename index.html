@@ -119,27 +119,32 @@
         position: absolute;
         top: 20px;
         left: 0;
-        background: white;
+        background: rgb(59, 2, 111);
+        color: whitesmoke;
         padding: 20px;
-        width: 80%;
-        max-width: 600px;
         border-radius: 12px;
         text-align: left;
-        margin: 0;
+        display: inline-block;   /* ajusta al contenido */
+        max-width: 100%;         /* evita que se desborde en pantallas pequeñas */
+
 
       ">
 
-        <h3>📊 Generar reporte de ventas</h3>
+        <h3 sty>📊 Generar reporte de ventas</h3>
 
-        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
-          <label for="filtroFechaInicio" style="white-space: nowrap;">📅 Fecha inicio:</label>
-          <input type="date" id="filtroFechaInicio" style="padding:5px;">
+        <div style="display:flex; gap:20px;">
+          <div style="display:flex; flex-direction:column; min-width:220px;">
+            <label for="filtroFechaInicio" style="white-space:nowrap; margin-bottom:6px;">📅 Fecha inicio:</label>
+            <input type="date" id="filtroFechaInicio" style="padding:5px; width:220px;">
+          </div>
 
-          <label for="filtroFechaFin" style="white-space: nowrap;">📅 Fecha fin:</label>
-          <input type="date" id="filtroFechaFin" style="padding:5px;">
+          <div style="display:flex; flex-direction:column; min-width:220px;">
+            <label for="filtroFechaFin" style="white-space:nowrap; margin-bottom:6px;">📅 Fecha fin:</label>
+            <input type="date" id="filtroFechaFin" style="padding:5px; width:220px;">
+          </div>
         </div>
 
-        <br><br>
+        <br>
 
         <p>¿Deseas que el reporte incluya detalle por producto?</p>
         <button onclick="ejecutarReporte(true)">✔️ Sí, incluir productos</button>
@@ -165,7 +170,11 @@
 
     ">
       <div style="
-        background: white;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: rgb(63, 44, 141);
+        color: rgb(4, 4, 4);
         padding: 20px;
         width: 100%;
         max-width: 500px;
@@ -175,7 +184,7 @@
         margin-right: auto;
       ">
 
-        <h2 style="text-align:left;">📈 Resultado del reporte</h2>
+        <h2 style="text-align:left; color: white;">📈 Resultado del reporte</h2>
 
         <div id="contenedorReporteGenerado"></div>
 
