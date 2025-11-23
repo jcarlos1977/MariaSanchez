@@ -1030,122 +1030,227 @@ function cerrarModalResultadoReporte() {
 
 
 // GENERAR REPORTE
+
+// Opcional: formato español largo para claves y encabezado
+function formatearFechaLargo(date) {
+  return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 async function generarReporteVentas(incluirDetalle, fechaInicioRaw = null, fechaFinRaw = null) {
   try {
     let query = db.collection("movimientos").where("tipo", "==", "venta");
 
-    let fechaInicio = null;
-    let fechaFin = null;
-
+    // Mantén tu filtro actual (si lo estás usando), pero el encabezado se tomará de las fechas agrupadas
     if (fechaInicioRaw && fechaFinRaw) {
-      fechaInicio = new Date(fechaInicioRaw);
-      fechaInicio.setHours(0, 0, 0, 0);
+      const dInicio = new Date(fechaInicioRaw);
+      const dFin = new Date(fechaFinRaw);
 
-      fechaFin = new Date(fechaFinRaw);
-      fechaFin.setDate(fechaFin.getDate() + 1);
-      fechaFin.setHours(0, 0, 0, 0);
+      const fechaInicio = new Date(dInicio.getFullYear(), dInicio.getMonth(), dInicio.getDate(), 0, 0, 0, 0);
+      const fechaFin = new Date(dFin.getFullYear(), dFin.getMonth(), dFin.getDate(), 23, 59, 59, 999);
 
-      console.log("Inicio:", fechaInicio.toISOString());
-      console.log("Fin:", fechaFin.toISOString());
-
-      query = query
-        .where("fecha", ">=", fechaInicio)
-        .where("fecha", "<", fechaFin);
+      console.log("Filtro Fecha:", fechaInicio.toISOString(), "-", fechaFin.toISOString());
+      query = query.where("fecha", ">=", fechaInicio).where("fecha", "<=", fechaFin);
     }
 
     const snapshot = await query.get();
-    if (snapshot.empty) {
-      alert("No hay ventas registradas en el periodo seleccionado.");
-      return;
-    }
 
-    let ventasPorFecha = {};
+    // Estructuras
+    const ventasPorFecha = {};
     let totalCantidad = 0;
     let totalInvertido = 0;
     let totalVenta = 0;
     let totalUtilidad = 0;
 
+    // Agrupar por fecha local (las claves que se muestran abajo)
     for (const doc of snapshot.docs) {
       const mov = doc.data();
-      const fechaKey = mov.fecha.toDate().toLocaleDateString();
 
-      if (!ventasPorFecha[fechaKey]) {
-        ventasPorFecha[fechaKey] = [];
+      let fechaMovimiento = null;
+      if (mov.fecha && typeof mov.fecha.toDate === "function") {
+        fechaMovimiento = mov.fecha.toDate();
+      } else if (mov.fecha && typeof mov.fecha.seconds === "number") {
+        fechaMovimiento = new Date(mov.fecha.seconds * 1000);
+      } else {
+        console.warn("Fecha inválida en documento:", doc.id, mov.fecha);
+        continue;
       }
+
+      const fechaClaveDate = new Date(
+        fechaMovimiento.getFullYear(),
+        fechaMovimiento.getMonth(),
+        fechaMovimiento.getDate(),
+        0, 0, 0, 0
+      );
+
+      const fechaKey = formatearFechaLargo(fechaClaveDate);
+      if (!ventasPorFecha[fechaKey]) ventasPorFecha[fechaKey] = [];
       ventasPorFecha[fechaKey].push(mov);
     }
 
+    // Construir encabezado a partir de las fechas agrupadas
+    const fechasKeys = Object.keys(ventasPorFecha);
+
+    // Ordenar por fecha real, no alfabética
+    const parseKeyToDate = (key) => {
+      // Creamos un Date confiable volviendo a formatear con Intl y luego dividir
+      // alternativa robusta: extraer números con regex
+      const m = key.match(/^(\d{1,2}) de ([a-záéíóú]+) de (\d{4})$/i);
+      if (m) {
+        const dia = +m[1];
+        const anio = +m[3];
+        const meses = {
+          "enero": 0, "febrero": 1, "marzo": 2, "abril": 3, "mayo": 4, "junio": 5,
+          "julio": 6, "agosto": 7, "septiembre": 8, "octubre": 9, "noviembre": 10, "diciembre": 11
+        };
+        const mes = meses[m[2].toLowerCase()];
+        return new Date(anio, mes, dia, 0, 0, 0, 0);
+      }
+      // Si por alguna razón no matchea, devolvemos un Date inválido para no romper
+      return new Date(NaN);
+    };
+
+    fechasKeys.sort((a, b) => parseKeyToDate(a) - parseKeyToDate(b));
+
     let html = `<h3 style="color: white;">Reporte de Ventas</h3>`;
-    if (fechaInicio && fechaFin) {
-      html += `<p style="color: white;">Del ${fechaInicio.toLocaleDateString()} al ${new Date(fechaFin.getTime() - 1).toLocaleDateString()}</p>`;
+
+    if (fechasKeys.length > 0) {
+      const encabezadoDesde = fechasKeys[0];
+      const encabezadoHasta = fechasKeys[fechasKeys.length - 1];
+      html += `<p style="color: white;">Del ${encabezadoDesde} al ${encabezadoHasta}</p>`;
+    } else {
+      html += `<p style="color: white;">Sin resultados en el periodo seleccionado.</p>`;
     }
 
-    if (incluirDetalle) {
-      for (const fecha in ventasPorFecha) {
-        html += `<h4 style="color: white;">📅 Fecha: ${fecha}</h4>`;
-        html += `
-          <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;">
-            <tr style="background:#eee;">
-              <th>Producto</th>
-              <th>Talla</th>
-              <th>Cantidad</th>
-              <th>Invertido</th>
-              <th>Venta</th>
-              <th>Utilidad</th>
-            </tr>
-        `;
-
-        let subtotalCantidad = 0;
-        let subtotalInvertido = 0;
-        let subtotalVenta = 0;
-        let subtotalUtilidad = 0;
-
-        for (const mov of ventasPorFecha[fecha]) {
-          const idProd = `${mov.producto}_${mov.talla}`;
-          const prodDoc = await db.collection("productos").doc(idProd).get();
-          const precioCompra = prodDoc.exists ? prodDoc.data().precioCompra || 0 : 0;
-
-          const cantidad = mov.cantidad || 0;
-          const invertido = cantidad * precioCompra;
-          const venta = mov.total || 0;
-          const utilidad = venta - invertido;
-
+    // Render del detalle o totales por fecha
+    if (fechasKeys.length > 0) {
+      if (incluirDetalle) {
+        for (const fechaKey of fechasKeys) {
+          html += `<h4 style="color: white;">📅 Fecha: ${fechaKey}</h4>`;
           html += `
-            <tr>
-              <td>${mov.producto}</td>
-              <td>${mov.talla}</td>
-              <td>${cantidad}</td>
-              <td>$${invertido.toFixed(2)}</td>
-              <td>$${venta.toFixed(2)}</td>
-              <td>$${utilidad.toFixed(2)}</td>
-            </tr>
+            <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;">
+              <tr style="background:#eee;">
+                <th>Producto</th>
+                <th>Talla</th>
+                <th>Cantidad</th>
+                <th>Invertido</th>
+                <th>Venta</th>
+                <th>Utilidad</th>
+              </tr>
           `;
 
-          subtotalCantidad += cantidad;
-          subtotalInvertido += invertido;
-          subtotalVenta += venta;
-          subtotalUtilidad += utilidad;
+          let subtotalCantidad = 0;
+          let subtotalInvertido = 0;
+          let subtotalVenta = 0;
+          let subtotalUtilidad = 0;
 
-          totalCantidad += cantidad;
-          totalInvertido += invertido;
-          totalVenta += venta;
-          totalUtilidad += utilidad;
+          for (const mov of ventasPorFecha[fechaKey]) {
+            const producto = mov.producto || "Sin nombre";
+            const talla = mov.talla || "-";
+            const cantidad = mov.cantidad || 0;
+            const venta = mov.total || 0;
+
+            // Si tienes costoTotal en el movimiento, úsalo directo
+            let invertido = typeof mov.costoTotal === "number" ? mov.costoTotal : 0;
+
+            // Si no, intenta obtener precioCompra desde productos
+            let productoNoEncontrado = false;
+            if (invertido === 0) {
+              const idProd = `${producto}_${talla}`;
+              try {
+                const prodDoc = await db.collection("productos").doc(idProd).get();
+                const precioCompra = prodDoc.exists ? (prodDoc.data().precioCompra || 0) : 0;
+                if (!prodDoc.exists) productoNoEncontrado = true;
+                invertido = (cantidad || 0) * precioCompra;
+              } catch (error) {
+                console.error("Error al obtener producto:", idProd, error);
+                productoNoEncontrado = true;
+              }
+            }
+
+            const utilidad = venta - invertido;
+
+            html += `
+              <tr${productoNoEncontrado ? ' style="background:#fee;"' : ''}>
+                <td>${producto}${productoNoEncontrado ? ' ⚠️' : ''}</td>
+                <td>${talla}</td>
+                <td>${cantidad}</td>
+                <td>$${invertido.toFixed(2)}</td>
+                <td>$${venta.toFixed(2)}</td>
+                <td>$${utilidad.toFixed(2)}</td>
+              </tr>
+            `;
+
+            subtotalCantidad += cantidad;
+            subtotalInvertido += invertido;
+            subtotalVenta += venta;
+            subtotalUtilidad += utilidad;
+
+            totalCantidad += cantidad;
+            totalInvertido += invertido;
+            totalVenta += venta;
+            totalUtilidad += utilidad;
+          }
+
+          html += `
+            <tr style="font-weight:bold;background:#f9f9f9;">
+              <td colspan="2">Subtotal</td>
+              <td>${subtotalCantidad}</td>
+              <td>$${subtotalInvertido.toFixed(2)}</td>
+              <td>$${subtotalVenta.toFixed(2)}</td>
+              <td>$${subtotalUtilidad.toFixed(2)}</td>
+            </tr>
+          </table><br>`;
         }
+      } else {
+        for (const fechaKey of fechasKeys) {
+          html += `<h4 style="color: white;">📅 Fecha: ${fechaKey}</h4>`;
+          html += `
+            <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;">
+              <tr style="background:#eee;">
+                <th>Cantidad</th>
+                <th>Invertido</th>
+                <th>Venta</th>
+                <th>Utilidad</th>
+              </tr>
+          `;
 
-        html += `
-          <tr style="font-weight:bold;background:#f9f9f9;">
-            <td colspan="2">Subtotal</td>
-            <td>${subtotalCantidad}</td>
-            <td>$${subtotalInvertido.toFixed(2)}</td>
-            <td>$${subtotalVenta.toFixed(2)}</td>
-            <td>$${subtotalUtilidad.toFixed(2)}</td>
-          </tr>
-        </table><br>`;
+          let subtotalCantidad = 0;
+          let subtotalInvertido = 0;
+          let subtotalVenta = 0;
+          let subtotalUtilidad = 0;
+
+          for (const mov of ventasPorFecha[fechaKey]) {
+            const cantidad = mov.cantidad || 0;
+            const venta = mov.total || 0;
+            const costoTotal = typeof mov.costoTotal === "number" ? mov.costoTotal : 0;
+            const utilidad = venta - costoTotal;
+
+            subtotalCantidad += cantidad;
+            subtotalInvertido += costoTotal;
+            subtotalVenta += venta;
+            subtotalUtilidad += utilidad;
+
+            totalCantidad += cantidad;
+            totalInvertido += costoTotal;
+            totalVenta += venta;
+            totalUtilidad += utilidad;
+          }
+
+          html += `
+            <tr style="font-weight:bold;background:#f9f9f9;">
+              <td>${subtotalCantidad}</td>
+              <td>$${subtotalInvertido.toFixed(2)}</td>
+              <td>$${subtotalVenta.toFixed(2)}</td>
+              <td>$${subtotalUtilidad.toFixed(2)}</td>
+            </tr>
+          </table><br>`;
+        }
       }
     }
 
+    // Totales generales
     html += `
-      <h3 " style="color:white;">TOTAL GENERAL</h3>
+      <h3 style="color:white;">TOTAL GENERAL</h3>
       <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-weight:bold;">
         <tr style="background:#eee;">
           <th>Cantidad</th>
@@ -1162,10 +1267,10 @@ async function generarReporteVentas(incluirDetalle, fechaInicioRaw = null, fecha
       </table>
     `;
 
+    // Mostrar
     document.getElementById("contenedorReporteGenerado").innerHTML = html;
     document.getElementById("modalReporteVentas").style.display = "none";
     document.getElementById("modalResultadoReporte").style.display = "flex";
-
   } catch (err) {
     console.error("Error generando reporte:", err);
     alert("Error generando reporte");
