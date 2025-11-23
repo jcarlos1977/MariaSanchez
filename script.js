@@ -1075,14 +1075,14 @@ async function generarReporteVentas(incluirDetalle, fechaInicioRaw = null, fecha
       ventasPorFecha[fechaKey].push(mov);
     }
 
-    let html = `<h3>Reporte de Ventas</h3>`;
+    let html = `<h3 style="color: white;">Reporte de Ventas</h3>`;
     if (fechaInicio && fechaFin) {
-      html += `<p>Del ${fechaInicio.toLocaleDateString()} al ${new Date(fechaFin.getTime() - 1).toLocaleDateString()}</p>`;
+      html += `<p style="color: white;">Del ${fechaInicio.toLocaleDateString()} al ${new Date(fechaFin.getTime() - 1).toLocaleDateString()}</p>`;
     }
 
     if (incluirDetalle) {
       for (const fecha in ventasPorFecha) {
-        html += `<h4>📅 Fecha: ${fecha}</h4>`;
+        html += `<h4 style="color: white;">📅 Fecha: ${fecha}</h4>`;
         html += `
           <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;">
             <tr style="background:#eee;">
@@ -1145,7 +1145,7 @@ async function generarReporteVentas(incluirDetalle, fechaInicioRaw = null, fecha
     }
 
     html += `
-      <h3>TOTAL GENERAL</h3>
+      <h3 " style="color:white;">TOTAL GENERAL</h3>
       <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-weight:bold;">
         <tr style="background:#eee;">
           <th>Cantidad</th>
