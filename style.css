@@ -109,3 +109,11 @@ body, html {
   min-height: 100%;
   height: auto;
 }
+
+.btnCopiarAlineado {
+  display: inline-block;
+  width: 40px; /* solo icono */
+  padding: 8px;
+  text-align: center;
+  
+}
