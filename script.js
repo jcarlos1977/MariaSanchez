@@ -323,40 +323,125 @@ async function autocompletarPreciosPorProductoTalla() {
 
 // ----- Agregar producto -----
 async function agregarProducto() {
-  const producto=document.getElementById('producto').value.trim();
-  const talla=document.getElementById('talla').value.trim();
-  const cantidad=parseInt(document.getElementById('cantidad').value||'0');
-  const precioCompra=parseFloat(document.getElementById('precioCompra').value||'0')||0;
-  const precioVenta=parseFloat(document.getElementById('precioVenta').value||'0')||0;
-  if(!producto||!talla||!cantidad||!precioCompra||!precioVenta)return alert('⚠️ Completa todos los campos.');
-  const id=`${producto}_${talla}`;
-  const ref=db.collection('productos').doc(id);
-  const doc=await ref.get();
-  if(doc.exists) await ref.update({cantidad:doc.data().cantidad+cantidad,precioCompra,precioVenta});
-  else await ref.set({producto,talla,cantidad,precioCompra,precioVenta});
-  await db.collection('movimientos').add({tipo:'compra',producto,talla,cantidad,total:cantidad*precioCompra,fecha:new Date()});
-  alert(`✅ Agregado ${cantidad} ${producto}(s) talla ${talla}`);
-  if(document.getElementById('inventarioSection').style.display==='block')mostrarInventario();
-  if(document.getElementById('movimientosSection').style.display==='block')mostrarMovimientos();
+  const producto = document.getElementById('producto').value.trim();
+  const talla = document.getElementById('talla').value.trim();
+  const cantidad = parseInt(document.getElementById('cantidad').value || '0');
+  const precioCompra = parseFloat(document.getElementById('precioCompra').value || '0') || 0;
+  const precioVenta = parseFloat(document.getElementById('precioVenta').value || '0') || 0;
+
+  if (!producto || !talla || !cantidad || !precioCompra || !precioVenta) {
+    return alert('⚠️ Completa todos los campos.');
+  }
+
+  const id = `${producto}_${talla}`;
+  const ref = db.collection('productos').doc(id);
+  const doc = await ref.get();
+
+  if (doc.exists) {
+    await ref.update({
+      cantidad: doc.data().cantidad + cantidad,
+      precioCompra,
+      precioVenta
+    });
+  } else {
+    await ref.set({
+      producto,
+      talla,
+      cantidad,
+      precioCompra,
+      precioVenta
+    });
+  }
+
+  await db.collection('movimientos').add({
+    tipo: 'compra',
+    producto,
+    talla,
+    cantidad,
+    total: cantidad * precioCompra,
+    fecha: new Date()
+  });
+
+  // ✅ Mensaje completo
+  alert(
+    `✅ Se agregó ${cantidad} ${producto}(s) talla ${talla}.\n` +
+    `💰 Precio de compra: $${precioCompra.toFixed(2)}\n` +
+    `🏷️ Precio de venta: $${precioVenta.toFixed(2)}\n\n` +
+    `🙌 Gracias Mari por agregar esto al sistema.`
+  );
+
+  // ✅ Limpiar los inputs
+  document.getElementById('producto').value = '';
+  document.getElementById('talla').value = '';
+  document.getElementById('cantidad').value = '';
+  document.getElementById('precioCompra').value = '';
+  document.getElementById('precioVenta').value = '';
+
+  // ✅ Actualizar vistas si están activas
+  if (document.getElementById('inventarioSection').style.display === 'block') mostrarInventario();
+  if (document.getElementById('movimientosSection').style.display === 'block') mostrarMovimientos();
 }
 
 // ----- Vender producto -----
+
+
 async function venderProducto() {
-  const producto=document.getElementById('producto').value.trim();
-  const talla=document.getElementById('talla').value.trim();
-  const cantidad=parseInt(document.getElementById('cantidad').value||'0');
-  if(!producto||!talla||!cantidad)return alert('⚠️ Completa los campos.');
-  const id=`${producto}_${talla}`;
-  const ref=db.collection('productos').doc(id);
-  const doc=await ref.get();
-  if(doc.exists&&doc.data().cantidad>=cantidad){
-    await ref.update({cantidad:doc.data().cantidad-cantidad});
-    const precioVenta=parseFloat(doc.data().precioVenta)||parseFloat(document.getElementById('precioVenta').value)||0;
-    await db.collection('movimientos').add({tipo:'venta',producto,talla,cantidad,total:cantidad*precioVenta,fecha:new Date()});
-    alert(`💰 Venta registrada: ${cantidad} ${producto}(s)`);
-    mostrarInventario();mostrarMovimientos();
-  } else alert('❌ No hay suficiente inventario.');
+  const producto = document.getElementById('producto').value.trim();
+  const talla = document.getElementById('talla').value.trim();
+  const cantidad = parseInt(document.getElementById('cantidad').value || '0');
+
+  if (!producto || !talla || !cantidad) {
+    return alert('⚠️ Completa los campos.');
+  }
+
+  const id = `${producto}_${talla}`;
+  const ref = db.collection('productos').doc(id);
+  const doc = await ref.get();
+
+  if (doc.exists && doc.data().cantidad >= cantidad) {
+    await ref.update({
+      cantidad: doc.data().cantidad - cantidad
+    });
+
+    const precioVenta = parseFloat(doc.data().precioVenta) || 0;
+    const precioCompra = parseFloat(doc.data().precioCompra) || 0;
+
+    const totalVenta = cantidad * precioVenta;
+    const totalCosto = cantidad * precioCompra;
+
+    await db.collection('movimientos').add({
+      tipo: 'venta',
+      producto,
+      talla,
+      cantidad,
+      total: totalVenta,
+      costoTotal: totalCosto,
+      fecha: new Date()
+    });
+
+    // ✅ Mensaje completo
+    alert(
+      `✅ Venta registrada: ${cantidad} ${producto}(s) talla ${talla}.\n` +
+      `💰 Precio de compra: $${precioCompra.toFixed(2)}\n` +
+      `🏷️ Precio de venta: $${precioVenta.toFixed(2)}\n` +
+      `📦 Total generado: $${totalVenta.toFixed(2)}\n\n` +
+      `🙌 Gracias Mari por registrar esta venta en el sistema.`
+    );
+
+    // ✅ Limpiar los inputs
+    document.getElementById('producto').value = '';
+    document.getElementById('talla').value = '';
+    document.getElementById('cantidad').value = '';
+
+    // ✅ Actualizar vistas
+    mostrarInventario();
+    mostrarMovimientos();
+
+  } else {
+    alert('❌ No hay suficiente inventario.');
+  }
 }
+
 
 // ----- Mostrar inventario -----
 async function mostrarInventario() {
@@ -801,6 +886,25 @@ document.getElementById('buscarCodigo').addEventListener('dblclick', () => {
   }
 });
 
+// Este codigo es para el botton copiar codigo
+document.getElementById('btnCopiarCodigo').addEventListener('click', () => {
+  const producto = (document.getElementById('producto')?.value || '').trim();
+  const talla = (document.getElementById('talla')?.value || '').trim();
+
+  if (!producto && !talla) {
+    alert('No hay valores en Producto o Talla para copiar.');
+    return;
+  }
+
+  const codigo = talla ? `${producto} ${talla}` : producto;
+  const inputBuscar = document.getElementById('buscarCodigo');
+  inputBuscar.value = codigo;
+
+  if (typeof buscarPorCodigo === 'function') {
+    buscarPorCodigo(codigo);
+  }
+});
+
 
 let escaneoActivo = false;
 let qrReader = null;
@@ -905,6 +1009,196 @@ window.addEventListener('load', () => {
   calcularResumen();
 });
 
+function abrirModalGenerarReporte() {
+  document.getElementById("modalReporteVentas").style.display = "flex";
+}
+
+//Function para generar reporte de ventas
+
+// ABRIR / CERRAR MODAL
+function abrirModalGenerarReporte() {
+  document.getElementById("modalReporteVentas").style.display = "flex";
+}
+
+function cerrarModalGenerarReporte() {
+  document.getElementById("modalReporteVentas").style.display = "none";
+}
+
+function cerrarModalResultadoReporte() {
+  document.getElementById("modalResultadoReporte").style.display = "none";
+}
+
+
+// GENERAR REPORTE
+async function generarReporteVentas(incluirDetalle, fechaInicioRaw = null, fechaFinRaw = null) {
+  try {
+    let query = db.collection("movimientos").where("tipo", "==", "venta");
+
+    let fechaInicio = null;
+    let fechaFin = null;
+
+    if (fechaInicioRaw && fechaFinRaw) {
+      fechaInicio = new Date(fechaInicioRaw);
+      fechaInicio.setHours(0, 0, 0, 0);
+
+      fechaFin = new Date(fechaFinRaw);
+      fechaFin.setDate(fechaFin.getDate() + 1);
+      fechaFin.setHours(0, 0, 0, 0);
+
+      console.log("Inicio:", fechaInicio.toISOString());
+      console.log("Fin:", fechaFin.toISOString());
+
+      query = query
+        .where("fecha", ">=", fechaInicio)
+        .where("fecha", "<", fechaFin);
+    }
+
+    const snapshot = await query.get();
+    if (snapshot.empty) {
+      alert("No hay ventas registradas en el periodo seleccionado.");
+      return;
+    }
+
+    let ventasPorFecha = {};
+    let totalCantidad = 0;
+    let totalInvertido = 0;
+    let totalVenta = 0;
+    let totalUtilidad = 0;
+
+    for (const doc of snapshot.docs) {
+      const mov = doc.data();
+      const fechaKey = mov.fecha.toDate().toLocaleDateString();
+
+      if (!ventasPorFecha[fechaKey]) {
+        ventasPorFecha[fechaKey] = [];
+      }
+      ventasPorFecha[fechaKey].push(mov);
+    }
+
+    let html = `<h3>Reporte de Ventas</h3>`;
+    if (fechaInicio && fechaFin) {
+      html += `<p>Del ${fechaInicio.toLocaleDateString()} al ${new Date(fechaFin.getTime() - 1).toLocaleDateString()}</p>`;
+    }
+
+    if (incluirDetalle) {
+      for (const fecha in ventasPorFecha) {
+        html += `<h4>📅 Fecha: ${fecha}</h4>`;
+        html += `
+          <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;">
+            <tr style="background:#eee;">
+              <th>Producto</th>
+              <th>Talla</th>
+              <th>Cantidad</th>
+              <th>Invertido</th>
+              <th>Venta</th>
+              <th>Utilidad</th>
+            </tr>
+        `;
+
+        let subtotalCantidad = 0;
+        let subtotalInvertido = 0;
+        let subtotalVenta = 0;
+        let subtotalUtilidad = 0;
+
+        for (const mov of ventasPorFecha[fecha]) {
+          const idProd = `${mov.producto}_${mov.talla}`;
+          const prodDoc = await db.collection("productos").doc(idProd).get();
+          const precioCompra = prodDoc.exists ? prodDoc.data().precioCompra || 0 : 0;
+
+          const cantidad = mov.cantidad || 0;
+          const invertido = cantidad * precioCompra;
+          const venta = mov.total || 0;
+          const utilidad = venta - invertido;
+
+          html += `
+            <tr>
+              <td>${mov.producto}</td>
+              <td>${mov.talla}</td>
+              <td>${cantidad}</td>
+              <td>$${invertido.toFixed(2)}</td>
+              <td>$${venta.toFixed(2)}</td>
+              <td>$${utilidad.toFixed(2)}</td>
+            </tr>
+          `;
+
+          subtotalCantidad += cantidad;
+          subtotalInvertido += invertido;
+          subtotalVenta += venta;
+          subtotalUtilidad += utilidad;
+
+          totalCantidad += cantidad;
+          totalInvertido += invertido;
+          totalVenta += venta;
+          totalUtilidad += utilidad;
+        }
+
+        html += `
+          <tr style="font-weight:bold;background:#f9f9f9;">
+            <td colspan="2">Subtotal</td>
+            <td>${subtotalCantidad}</td>
+            <td>$${subtotalInvertido.toFixed(2)}</td>
+            <td>$${subtotalVenta.toFixed(2)}</td>
+            <td>$${subtotalUtilidad.toFixed(2)}</td>
+          </tr>
+        </table><br>`;
+      }
+    }
+
+    html += `
+      <h3>TOTAL GENERAL</h3>
+      <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-weight:bold;">
+        <tr style="background:#eee;">
+          <th>Cantidad</th>
+          <th>Invertido</th>
+          <th>Venta</th>
+          <th>Utilidad</th>
+        </tr>
+        <tr>
+          <td>${totalCantidad}</td>
+          <td>$${totalInvertido.toFixed(2)}</td>
+          <td>$${totalVenta.toFixed(2)}</td>
+          <td>$${totalUtilidad.toFixed(2)}</td>
+        </tr>
+      </table>
+    `;
+
+    document.getElementById("contenedorReporteGenerado").innerHTML = html;
+    document.getElementById("modalReporteVentas").style.display = "none";
+    document.getElementById("modalResultadoReporte").style.display = "flex";
+
+  } catch (err) {
+    console.error("Error generando reporte:", err);
+    alert("Error generando reporte");
+  }
+}
+
+
+
+function ejecutarReporte(incluirDetalle) {
+  const fechaInicioRaw = document.getElementById("filtroFechaInicio").value;
+  const fechaFinRaw = document.getElementById("filtroFechaFin").value;
+
+  if (!fechaInicioRaw || !fechaFinRaw) {
+    alert("Por favor selecciona ambas fechas.");
+    return;
+  }
+
+  const fechaInicio = new Date(fechaInicioRaw);
+  fechaInicio.setHours(0, 0, 0, 0);
+
+  const fechaFin = new Date(fechaFinRaw);
+  fechaFin.setDate(fechaFin.getDate() + 1); // Día siguiente
+  fechaFin.setHours(0, 0, 0, 0);
+
+  console.log("Inicio:", fechaInicio.toISOString());
+  console.log("Fin:", fechaFin.toISOString());
+
+  generarReporteVentas(incluirDetalle, fechaInicio, fechaFin);
+}
+
+window.addEventListener("load", () => {
+  document.getElementById("modalResultadoReporte").style.display = "none";
+});
 
 
 // ----- exportar funciones útiles al scope global (opcional) -----
